@@ -1,0 +1,394 @@
+:root {
+    color-scheme: light;
+
+    --wt-page-background: #f5f7fb;
+    --wt-surface: #ffffff;
+    --wt-surface-secondary: #f8fafc;
+    --wt-surface-tertiary: #eef2f7;
+
+    --wt-text-primary: #111827;
+    --wt-text-secondary: #4b5563;
+    --wt-text-muted: #6b7280;
+
+    --wt-border: #dfe3e8;
+    --wt-border-strong: #cbd5e1;
+
+    --wt-input-background: #ffffff;
+    --wt-input-text: #111827;
+    --wt-input-placeholder: #6b7280;
+
+    --wt-select-background: #ffffff;
+    --wt-select-text: #111827;
+
+    --wt-option-background: #ffffff;
+    --wt-option-text: #111827;
+
+    --wt-accent: #2563eb;
+    --wt-accent-soft: rgba(37, 99, 235, 0.1);
+
+    --wt-success: #16a34a;
+    --wt-warning: #d97706;
+    --wt-danger: #dc2626;
+
+    --wt-shadow:
+        0 10px 30px rgba(15, 23, 42, 0.08);
+
+    --wt-shadow-small:
+        0 4px 12px rgba(15, 23, 42, 0.06);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+html[data-theme="dark"],
+body[data-theme="dark"] {
+    --wt-page-background: #0b0f14;
+    --wt-surface: #121821;
+    --wt-surface-secondary: #171f2a;
+    --wt-surface-tertiary: #1d2733;
+
+    --wt-text-primary: #f8fafc;
+    --wt-text-secondary: #cbd5e1;
+    --wt-text-muted: #94a3b8;
+
+    --wt-border: #293544;
+    --wt-border-strong: #3a4858;
+
+    --wt-input-background: #0f151d;
+    --wt-input-text: #f8fafc;
+    --wt-input-placeholder: #94a3b8;
+
+    --wt-select-background: #0f151d;
+    --wt-select-text: #f8fafc;
+
+    --wt-option-background: #121821;
+    --wt-option-text: #f8fafc;
+
+    --wt-accent: #60a5fa;
+    --wt-accent-soft: rgba(96, 165, 250, 0.14);
+
+    --wt-success: #22c55e;
+    --wt-warning: #f59e0b;
+    --wt-danger: #f87171;
+
+    --wt-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.28);
+
+    --wt-shadow-small:
+        0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================================
+   GLOBAL RESET
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+html {
+    width: 100%;
+    background: var(--wt-page-background);
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    width: 100%;
+    min-width: 320px;
+
+    background: var(--wt-page-background);
+    color: var(--wt-text-primary);
+
+    overflow-x: hidden;
+
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+}
+
+#root {
+    width: 100%;
+    min-height: 100svh;
+}
+
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 0;
+    color: var(--wt-text-primary);
+}
+
+p {
+    color: inherit;
+}
+
+a {
+    color: inherit;
+}
+
+/* =========================================================
+   MEDIA
+   ========================================================= */
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+}
+
+img {
+    height: auto;
+}
+
+/* =========================================================
+   FORM CONTROLS
+   ========================================================= */
+
+button,
+input,
+textarea,
+select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+input,
+textarea,
+select {
+    color: var(--wt-input-text);
+    background-color: var(--wt-input-background);
+    border-color: var(--wt-border);
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--wt-input-placeholder);
+    opacity: 1;
+}
+
+textarea {
+    resize: vertical;
+}
+
+select {
+    color: var(--wt-select-text);
+    background-color: var(--wt-select-background);
+    -webkit-text-fill-color: var(--wt-select-text);
+    accent-color: var(--wt-accent);
+}
+
+select option {
+    color: var(--wt-option-text);
+    background-color: var(--wt-option-background);
+}
+
+select option:checked {
+    color: var(--wt-option-text);
+    background-color: var(--wt-option-background);
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* =========================================================
+   ACCESSIBILITY / FOCUS
+   ========================================================= */
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+    outline: 2px solid var(--wt-accent);
+    outline-offset: 2px;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+table {
+    max-width: 100%;
+}
+
+@media (max-width: 768px) {
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table th,
+    table td {
+        white-space: nowrap;
+    }
+}
+
+/* =========================================================
+   THEME-AWARE COMMON CLASSES
+   ========================================================= */
+
+.wt-page {
+    width: 100%;
+    min-height: 100svh;
+
+    background: var(--wt-page-background);
+    color: var(--wt-text-primary);
+}
+
+.wt-surface {
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    border-color: var(--wt-border);
+}
+
+.wt-secondary-text {
+    color: var(--wt-text-secondary);
+}
+
+.wt-muted-text {
+    color: var(--wt-text-muted);
+}
+
+.wt-select {
+    color: var(--wt-select-text) !important;
+    background-color: var(--wt-select-background) !important;
+    -webkit-text-fill-color: var(--wt-select-text) !important;
+}
+
+.wt-select option {
+    color: var(--wt-option-text) !important;
+    background-color: var(--wt-option-background) !important;
+}
+
+/* =========================================================
+   MOBILE SAFETY
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    body {
+        min-width: 320px;
+    }
+
+    h1 {
+        font-size: clamp(1.7rem, 7vw, 2.25rem);
+        line-height: 1.15;
+    }
+
+    h2 {
+        font-size: clamp(1.35rem, 5vw, 1.75rem);
+    }
+
+    h3 {
+        font-size: clamp(1.15rem, 4vw, 1.4rem);
+    }
+
+    button {
+        min-height: 42px;
+    }
+
+    input,
+    textarea,
+    select {
+        max-width: 100%;
+    }
+}
+
+/* =========================================================
+   SMALL PHONE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    body {
+        font-size: 15px;
+    }
+
+    button {
+        min-height: 44px;
+    }
+
+    input,
+    textarea,
+    select {
+        font-size: 16px;
+    }
+}
+
+/* =========================================================
+   REDUCE MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* =========================================================
+   THEME TRANSITIONS
+   ========================================================= */
+
+body,
+button,
+input,
+textarea,
+select,
+option {
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}

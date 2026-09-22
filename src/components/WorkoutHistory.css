@@ -1,0 +1,183 @@
+/* =========================================================
+   WORKOUT HISTORY - RESPONSIVE
+   ========================================================= */
+
+.wt-workout-history-page {
+    width: 100%;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ---------- Desktop ---------- */
+
+.wt-workout-history-page button {
+    min-height: 42px;
+}
+
+.wt-workout-history-page .wt-history-list {
+    width: 100%;
+}
+
+.wt-workout-history-page .wt-history-card {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .wt-workout-history-page {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    .wt-workout-history-page h1 {
+        font-size: clamp(28px, 5vw, 38px) !important;
+    }
+
+    .wt-workout-history-page h2 {
+        font-size: clamp(20px, 3.5vw, 28px) !important;
+    }
+
+    .wt-workout-history-page [style*="grid-template-columns"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .wt-workout-history-page {
+        padding: 16px !important;
+    }
+
+    /* Header */
+
+    .wt-workout-history-page [style*="justify-content: space-between"] {
+        gap: 16px !important;
+        align-items: flex-start !important;
+    }
+
+    .wt-workout-history-page h1 {
+        font-size: 30px !important;
+        line-height: 1.15 !important;
+    }
+
+    .wt-workout-history-page p {
+        line-height: 1.5;
+    }
+
+    /* Dashboard button */
+
+    .wt-workout-history-page button {
+        min-height: 44px;
+        max-width: 100%;
+    }
+
+    /* Stats */
+
+    .wt-workout-history-page [style*="grid-template-columns"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    /* Cards */
+
+    .wt-workout-history-page [style*="border-radius"] {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    .wt-workout-history-page {
+        padding: 12px !important;
+    }
+
+    .wt-workout-history-page h1 {
+        font-size: 26px !important;
+    }
+
+    .wt-workout-history-page h2 {
+        font-size: 20px !important;
+    }
+
+    .wt-workout-history-page [style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    .wt-workout-history-page button {
+        width: 100%;
+    }
+
+    .wt-workout-history-page [style*="justify-content: space-between"] {
+        flex-direction: column !important;
+    }
+
+    /* Keep completed badge readable */
+
+    .wt-workout-history-page [style*="Completed"] {
+        align-self: flex-start;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+    .wt-workout-history-page {
+        padding: 10px !important;
+    }
+
+    .wt-workout-history-page h1 {
+        font-size: 24px !important;
+    }
+
+    .wt-workout-history-page h2 {
+        font-size: 18px !important;
+    }
+
+    .wt-workout-history-page p {
+        font-size: 14px !important;
+    }
+}
+
+/* =========================================================
+   TOUCH / ACCESSIBILITY
+   ========================================================= */
+
+@media (hover: none) {
+
+    .wt-workout-history-page button {
+        min-height: 46px;
+    }
+}
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .wt-workout-history-page *,
+    .wt-workout-history-page *::before,
+    .wt-workout-history-page *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

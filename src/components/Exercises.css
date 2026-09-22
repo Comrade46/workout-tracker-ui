@@ -1,0 +1,264 @@
+/* =========================================================
+   EXERCISE LIBRARY - RESPONSIVE MOBILE LAYOUT
+   ========================================================= */
+
+.wt-exercises-page {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+/* Prevent long exercise names / text from forcing overflow */
+.wt-exercises-page h1,
+.wt-exercises-page h2,
+.wt-exercises-page h3,
+.wt-exercises-page p,
+.wt-exercises-page label,
+.wt-exercises-page span {
+    overflow-wrap: anywhere;
+}
+
+/* Images/icons should never exceed their container */
+.wt-exercises-page img,
+.wt-exercises-page svg {
+    max-width: 100%;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .wt-exercises-page {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    /*
+     * Any existing inline CSS grid inside Exercises
+     * becomes easier to fit on tablet screens.
+     */
+    .wt-exercises-page [style*="grid-template-columns"] {
+        grid-template-columns: repeat(
+            2,
+            minmax(0, 1fr)
+        ) !important;
+    }
+
+    /*
+     * Hero/header sections that were horizontal
+     * can wrap naturally.
+     */
+    .wt-exercises-page [style*="justify-content: space-between"] {
+        flex-wrap: wrap !important;
+    }
+
+    /*
+     * Form controls must remain inside the viewport.
+     */
+    .wt-exercises-page input,
+    .wt-exercises-page select,
+    .wt-exercises-page textarea {
+        max-width: 100% !important;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+    .wt-exercises-page {
+        padding: 0 !important;
+    }
+
+    /*
+     * Main content sections.
+     */
+    .wt-exercises-page > div {
+        max-width: 100% !important;
+    }
+
+    /*
+     * Header / Hero
+     */
+    .wt-exercises-page [style*="justify-content: space-between"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 16px !important;
+    }
+
+    /*
+     * Add Exercise button becomes full width.
+     */
+    .wt-exercises-page button {
+        max-width: 100%;
+    }
+
+    /*
+     * Existing CSS-in-JS grids become one column.
+     */
+    .wt-exercises-page [style*="grid-template-columns"] {
+        grid-template-columns: minmax(
+            0,
+            1fr
+        ) !important;
+    }
+
+    /*
+     * Search/filter toolbar.
+     */
+    .wt-exercises-page [style*="display: flex"] {
+        max-width: 100%;
+    }
+
+    /*
+     * Inputs and selects become comfortable touch targets.
+     */
+    .wt-exercises-page input,
+    .wt-exercises-page select,
+    .wt-exercises-page textarea {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        font-size: 16px !important;
+    }
+
+    /*
+     * Exercise cards.
+     */
+    .wt-exercises-page [style*="border-radius: 20px"] {
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /*
+     * Two-column time boxes become one column
+     * on narrow phones.
+     */
+    .wt-exercises-page [style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: minmax(
+            0,
+            1fr
+        ) !important;
+    }
+
+    /*
+     * Result count should not push filters outside
+     * the screen.
+     */
+    .wt-exercises-page [style*="margin-left: auto"] {
+        margin-left: 0 !important;
+    }
+
+    /*
+     * Form card.
+     */
+    .wt-exercises-page form {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /*
+     * Modal/dialog content.
+     */
+    .wt-exercises-page [role="dialog"] {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        max-height: calc(100vh - 24px) !important;
+        overflow-y: auto !important;
+    }
+
+    /*
+     * Long buttons/text should wrap rather than
+     * create horizontal scrolling.
+     */
+    .wt-exercises-page button {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+    .wt-exercises-page {
+        font-size: 14px;
+    }
+
+    .wt-exercises-page h1 {
+        font-size: 28px !important;
+        line-height: 1.15 !important;
+    }
+
+    .wt-exercises-page h2 {
+        font-size: 21px !important;
+    }
+
+    .wt-exercises-page h3 {
+        font-size: 18px !important;
+    }
+
+    .wt-exercises-page button {
+        min-height: 44px;
+    }
+
+    .wt-exercises-page input,
+    .wt-exercises-page select,
+    .wt-exercises-page textarea {
+        min-height: 44px;
+    }
+
+    /*
+     * Exercise card padding becomes smaller.
+     */
+    .wt-exercises-page [style*="padding: 22px"] {
+        padding: 16px !important;
+    }
+
+    /*
+     * Exercise icon.
+     */
+    .wt-exercises-page [style*="width: 55px"] {
+        width: 48px !important;
+        height: 48px !important;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+    .wt-exercises-page h1 {
+        font-size: 24px !important;
+    }
+
+    .wt-exercises-page h2 {
+        font-size: 19px !important;
+    }
+
+    .wt-exercises-page [style*="padding: 22px"] {
+        padding: 14px !important;
+    }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .wt-exercises-page *,
+    .wt-exercises-page *::before,
+    .wt-exercises-page *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}

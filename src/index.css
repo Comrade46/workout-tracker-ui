@@ -1,0 +1,98 @@
+
+/* =========================================================
+   WORKOUT TRACKER GLOBAL BASE CSS
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    background: var(--wt-page-background, #f5f7fb);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+
+    min-width: 320px;
+    min-height: 100vh;
+
+    background: var(--wt-page-background, #f5f7fb);
+    color: var(--wt-text-primary, #111827);
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Headings */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 0;
+    color: var(--wt-text-primary, #111827);
+}
+
+/* Paragraph */
+
+p {
+    color: inherit;
+}
+
+/* Links */
+
+a {
+    color: var(--wt-accent, #2563eb);
+}
+
+/* Forms */
+
+input,
+textarea,
+select,
+button {
+    font: inherit;
+}
+
+/* Buttons */
+
+button {
+    cursor: pointer;
+}
+
+/* Images */
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+    body {
+        min-width: 320px;
+    }
+}

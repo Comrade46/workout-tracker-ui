@@ -1,0 +1,202 @@
+
+/* =========================================================
+   DASHBOARD RESPONSIVE LAYOUT
+   Keeps existing dashboard logic and inline theme styles,
+   while adapting the layout for tablet and mobile screens.
+   ========================================================= */
+
+.dashboard-page {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.dashboard-container {
+    width: 100%;
+}
+
+.dashboard-primary-button,
+.dashboard-secondary-button,
+.dashboard-quick-card {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.dashboard-primary-button,
+.dashboard-secondary-button {
+    min-height: 42px;
+}
+
+.dashboard-quick-card {
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .dashboard-page {
+        padding: 24px 16px !important;
+    }
+
+    .dashboard-container {
+        max-width: 100% !important;
+    }
+
+    .dashboard-title {
+        font-size: 32px !important;
+    }
+
+    .dashboard-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+    }
+
+    .dashboard-stat-card {
+        padding: 18px !important;
+    }
+
+    .dashboard-quick-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-page {
+        min-height: calc(100svh - 60px) !important;
+        padding: 20px 12px !important;
+    }
+
+    .dashboard-header {
+        align-items: stretch !important;
+        gap: 16px !important;
+        margin-bottom: 22px !important;
+    }
+
+    .dashboard-header > div {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .dashboard-title {
+        font-size: 28px !important;
+        line-height: 1.15 !important;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-header .dashboard-primary-button {
+        width: 100% !important;
+    }
+
+    .dashboard-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        margin-bottom: 26px !important;
+    }
+
+    .dashboard-stat-card {
+        min-width: 0 !important;
+        padding: 15px 10px !important;
+        border-radius: 12px !important;
+    }
+
+    .dashboard-stat-card .cardIcon {
+        font-size: 24px;
+    }
+
+    .dashboard-stat-card h2 {
+        font-size: 24px !important;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-quick-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    .dashboard-quick-card {
+        padding: 17px !important;
+        min-height: 105px;
+    }
+
+    .dashboard-section {
+        margin-bottom: 26px !important;
+    }
+
+    .dashboard-section-header {
+        align-items: flex-start !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .dashboard-section-header > button {
+        width: 100% !important;
+    }
+
+    .dashboard-workout-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 15px !important;
+    }
+
+    .dashboard-workout-stats,
+    .workoutStats {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 7px !important;
+    }
+
+    .dashboard-empty-box {
+        padding: 36px 16px !important;
+    }
+
+    .dashboard-empty-box .dashboard-primary-button {
+        width: 100% !important;
+    }
+
+    .dashboard-error-box {
+        margin: 40px auto !important;
+        padding: 24px 18px !important;
+    }
+
+    .dashboard-error-box .dashboard-primary-button {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .dashboard-page {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    .dashboard-stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard-title {
+        font-size: 26px !important;
+    }
+
+    .dashboard-stat-card {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 10px;
+        text-align: left !important;
+    }
+
+    .dashboard-stat-card p {
+        margin: 0 !important;
+    }
+
+    .dashboard-stat-card h2 {
+        margin: 0 !important;
+    }
+}
+
+/* Touch targets */
+@media (hover: none) and (pointer: coarse) {
+    .dashboard-primary-button,
+    .dashboard-secondary-button,
+    .dashboard-quick-card {
+        min-height: 44px;
+    }
+}

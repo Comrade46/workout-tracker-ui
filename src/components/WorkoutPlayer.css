@@ -1,0 +1,344 @@
+/* =========================================================
+   WORKOUT PLAYER - RESPONSIVE MOBILE FOUNDATION
+   ========================================================= */
+
+.wt-workout-player-page {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+.wt-workout-player-page *,
+.wt-workout-player-page *::before,
+.wt-workout-player-page *::after {
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   GENERAL
+   ========================================================= */
+
+.wt-workout-player-page button,
+.wt-workout-player-page input {
+    font-family: inherit;
+}
+
+.wt-workout-player-page button {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.wt-workout-player-page input {
+    max-width: 100%;
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .wt-workout-player-page {
+        padding: 24px 14px !important;
+    }
+
+    .wt-workout-player-page > div {
+        max-width: 100% !important;
+    }
+
+    /*
+     * Header
+     */
+    .wt-workout-player-page header {
+        gap: 14px !important;
+    }
+
+    /*
+     * Main workout card
+     */
+    .wt-workout-player-page [style*="padding: 35px"] {
+        padding: 28px !important;
+    }
+
+    /*
+     * Timer
+     */
+    .wt-workout-player-page [style*="width: 230px"] {
+        width: 210px !important;
+        height: 210px !important;
+    }
+
+    /*
+     * Set form
+     */
+    .wt-workout-player-page [style*="grid-template-columns"] {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .wt-workout-player-page input {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+    .wt-workout-player-page {
+        padding: 14px 10px !important;
+    }
+
+    /*
+     * Header becomes vertical.
+     */
+    .wt-workout-player-page header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        margin-bottom: 16px !important;
+    }
+
+    /*
+     * Workout title
+     */
+    .wt-workout-player-page h1 {
+        font-size: 25px !important;
+        line-height: 1.2 !important;
+    }
+
+    /*
+     * Exit button
+     */
+    .wt-workout-player-page header button {
+        width: 100% !important;
+        min-height: 44px !important;
+    }
+
+    /*
+     * Progress card
+     */
+    .wt-workout-player-page [style*="padding: 18px"] {
+        padding: 14px !important;
+    }
+
+    /*
+     * Main player card
+     */
+    .wt-workout-player-page [style*="padding: 35px"] {
+        padding: 20px 14px !important;
+        border-radius: 16px !important;
+    }
+
+    /*
+     * Exercise title
+     */
+    .wt-workout-player-page h2 {
+        font-size: 28px !important;
+        line-height: 1.2 !important;
+        overflow-wrap: anywhere;
+    }
+
+    /*
+     * Metadata badges
+     */
+    .wt-workout-player-page [style*="display: flex"] {
+        max-width: 100%;
+    }
+
+    /*
+     * Timer becomes smaller.
+     */
+    .wt-workout-player-page [style*="width: 230px"] {
+        width: 180px !important;
+        height: 180px !important;
+        margin: 24px auto !important;
+        border-width: 8px !important;
+    }
+
+    /*
+     * Timer number
+     */
+    .wt-workout-player-page [style*="fontSize: 54"] {
+        font-size: 42px !important;
+    }
+
+    /*
+     * Workout controls.
+     */
+    .wt-workout-player-page [style*="gap: 12px"] {
+        gap: 8px !important;
+    }
+
+    /*
+     * Start / Pause / Skip
+     */
+    .wt-workout-player-page button {
+        min-height: 44px;
+    }
+
+    /*
+     * Set tracking card.
+     */
+    .wt-workout-player-page [style*="padding: 25px"] {
+        padding: 18px 14px !important;
+    }
+
+    /*
+     * Set form becomes one column.
+     */
+    .wt-workout-player-page [style*="grid-template-columns"] {
+        grid-template-columns:
+            minmax(0, 1fr) !important;
+    }
+
+    /*
+     * Inputs
+     */
+    .wt-workout-player-page input {
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 44px !important;
+        font-size: 16px !important;
+    }
+
+    /*
+     * Add Set button
+     */
+    .wt-workout-player-page button {
+        width: 100%;
+    }
+
+    /*
+     * Set table becomes horizontally scrollable
+     * instead of breaking the whole page.
+     */
+    .wt-workout-player-page [style*="overflowX"] {
+        max-width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /*
+     * If set list isn't explicitly scrollable,
+     * allow it to scroll safely.
+     */
+    .wt-workout-player-page [style*="grid-template-columns: 60px"] {
+        min-width: 560px;
+    }
+
+    /*
+     * Completion summary.
+     */
+    .wt-workout-player-page [style*="grid-template-columns: repeat(3"] {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 420px) {
+
+    .wt-workout-player-page {
+        padding: 10px 8px !important;
+    }
+
+    .wt-workout-player-page h1 {
+        font-size: 23px !important;
+    }
+
+    .wt-workout-player-page h2 {
+        font-size: 24px !important;
+    }
+
+    /*
+     * Timer
+     */
+    .wt-workout-player-page [style*="width: 230px"] {
+        width: 155px !important;
+        height: 155px !important;
+        border-width: 7px !important;
+    }
+
+    .wt-workout-player-page [style*="fontSize: 54"] {
+        font-size: 35px !important;
+    }
+
+    /*
+     * Timer label
+     */
+    .wt-workout-player-page [style*="fontSize: 13"] {
+        font-size: 10px !important;
+    }
+
+    /*
+     * Exercise metadata
+     */
+    .wt-workout-player-page [style*="padding: 6px 10px"] {
+        padding: 5px 8px !important;
+        font-size: 11px !important;
+    }
+
+    /*
+     * Completion summary stacks.
+     */
+    .wt-workout-player-page [style*="grid-template-columns: repeat(3"] {
+        grid-template-columns:
+            minmax(0, 1fr) !important;
+    }
+
+    /*
+     * Completion buttons.
+     */
+    .wt-workout-player-page [style*="display: flex"] button {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 360px) {
+
+    .wt-workout-player-page {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    .wt-workout-player-page h1 {
+        font-size: 21px !important;
+    }
+
+    .wt-workout-player-page h2 {
+        font-size: 22px !important;
+    }
+
+    .wt-workout-player-page [style*="width: 230px"] {
+        width: 140px !important;
+        height: 140px !important;
+    }
+
+    .wt-workout-player-page [style*="fontSize: 54"] {
+        font-size: 31px !important;
+    }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .wt-workout-player-page *,
+    .wt-workout-player-page *::before,
+    .wt-workout-player-page *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
