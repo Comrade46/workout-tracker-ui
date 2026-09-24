@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ThemeToggle from "../theme/ThemeToggle";
+import { APP_VERSION_LABEL } from "../config/appVersion";
 
 const navItems = [
     { label: "Dashboard", path: "/dashboard" },
@@ -127,10 +128,6 @@ function Navbar() {
 
                         color: var(--wt-text-primary);
                         text-decoration: none;
-
-                        font-size: 20px;
-                        font-weight: 800;
-                        letter-spacing: -0.4px;
                     }
 
                     .wt-brand-icon {
@@ -145,7 +142,35 @@ function Navbar() {
                             0 4px 10px rgba(37, 99, 235, 0.22);
                     }
 
+                    .wt-brand-content {
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        min-width: 0;
+                    }
+
                     .wt-brand-text {
+                        white-space: nowrap;
+
+                        font-size: 20px;
+                        font-weight: 800;
+                        letter-spacing: -0.4px;
+
+                        line-height: 1.15;
+                    }
+
+                    .wt-version-label {
+                        margin-top: 3px;
+
+                        color: var(--wt-text-secondary);
+
+                        font-size: 10px;
+                        font-weight: 600;
+
+                        line-height: 1;
+
+                        letter-spacing: 0.2px;
+
                         white-space: nowrap;
                     }
 
@@ -296,6 +321,15 @@ function Navbar() {
                         color: var(--wt-accent);
                     }
 
+                    .wt-mobile-version {
+                        padding: 4px 13px 8px;
+
+                        color: var(--wt-text-secondary);
+
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+
                     .wt-mobile-actions {
                         display: flex;
                         align-items: center;
@@ -380,6 +414,10 @@ function Navbar() {
                         .wt-brand-text {
                             font-size: 17px;
                         }
+
+                        .wt-version-label {
+                            font-size: 9px;
+                        }
                     }
 
                     @media (max-width: 420px) {
@@ -419,9 +457,15 @@ function Navbar() {
                             className="wt-brand-icon"
                         />
 
-                        <span className="wt-brand-text">
-                            Workout Tracker
-                        </span>
+                        <div className="wt-brand-content">
+                            <span className="wt-brand-text">
+                                Workout Tracker
+                            </span>
+
+                            <span className="wt-version-label">
+                                {APP_VERSION_LABEL}
+                            </span>
+                        </div>
                     </Link>
 
                     <div className="wt-desktop-nav">
@@ -483,6 +527,10 @@ function Navbar() {
                                 </Link>
                             ))}
 
+                            <div className="wt-mobile-version">
+                                {APP_VERSION_LABEL}
+                            </div>
+
                             <div className="wt-mobile-actions">
                                 <ThemeToggle />
 
@@ -494,6 +542,7 @@ function Navbar() {
                                     Logout
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 )}
