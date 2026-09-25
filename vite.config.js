@@ -10,7 +10,9 @@ export default defineConfig({
             registerType: "autoUpdate",
 
             includeAssets: [
-                "favicon.svg"
+                "favicon.png",
+                "icons/icon-192.png",
+                "icons/icon-512.png"
             ],
 
             manifest: {

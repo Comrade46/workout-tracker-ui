@@ -1,65 +1,824 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import "./WorkoutPlans.css";
 
-function WorkoutPlans() {
+const CATEGORIES = [
+    "Upper Body",
+    "Lower Body",
+    "Legs",
+    "Arms",
+    "Chest",
+    "Back",
+    "Core/Abs",
+    "Full Body",
+    "Cardio",
+    "HIIT"
+];
 
-    const [workoutPlans, setWorkoutPlans] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+const DIFFICULTIES = [
+    "Beginner",
+    "Intermediate",
+    "Advanced"
+];
+
+const emptyPlanForm = {
+    name: "",
+    description: "",
+    category: "Full Body",
+    difficulty: "Beginner"
+};
+
+const createEmptyExerciseRow = () => ({
+    exerciseId: "",
+    trackingType: "REPS",
+    targetValue: 10,
+    targetSets: 3,
+    restSeconds: 30
+});
+
+function normalizeCategory(value) {
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]/g, " ")
+        .replace(/\s+/g, " ");
+}
+
+function categoryMatches(
+    selectedCategory,
+    exerciseCategory
+) {
+    const selected =
+        normalizeCategory(selectedCategory);
+
+    const exercise =
+        normalizeCategory(exerciseCategory);
+
+    if (!selected || !exercise) {
+        return false;
+    }
+
+    if (
+        selected === "core/abs" ||
+        selected === "core abs" ||
+        selected === "core"
+    ) {
+        return (
+            exercise === "core" ||
+            exercise === "abs" ||
+            exercise === "core/abs" ||
+            exercise === "core abs"
+        );
+    }
+
+    if (selected === "upper body") {
+        return (
+            exercise === "upper body" ||
+            exercise === "upper"
+        );
+    }
+
+    if (selected === "lower body") {
+        return (
+            exercise === "lower body" ||
+            exercise === "lower"
+        );
+    }
+
+    return exercise === selected;
+}
+
+function WorkoutPlans() {
 
     const navigate = useNavigate();
 
+    const [workoutPlans, setWorkoutPlans] = useState([]);
+    const [exercises, setExercises] = useState([]);
+
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    const [error, setError] = useState("");
+    const [actionError, setActionError] = useState("");
+
+    const [showForm, setShowForm] = useState(false);
+
+    const [editingPlan, setEditingPlan] =
+        useState(null);
+
+    const [planForm, setPlanForm] =
+        useState(emptyPlanForm);
+
+    const [exerciseRows, setExerciseRows] =
+        useState([
+            createEmptyExerciseRow()
+        ]);
+
+    const [newlyCreatedPlanId, setNewlyCreatedPlanId] =
+        useState(null);
+
     // =====================================================
-    // FETCH WORKOUT PLANS
+    // LOAD DATA
     // =====================================================
 
     useEffect(() => {
-        fetchWorkoutPlans();
+        loadData();
     }, []);
 
-    const fetchWorkoutPlans = async () => {
-
+    const loadData = async () => {
         try {
-
             setLoading(true);
             setError("");
 
-            const response = await api.get("/workout-plans");
-
-            console.log("Workout Plans:", response.data);
+            const [
+                plansResponse,
+                exercisesResponse
+            ] = await Promise.all([
+                api.get("/workout-plans"),
+                api.get("/exercises")
+            ]);
 
             setWorkoutPlans(
-                Array.isArray(response.data)
-                    ? response.data
+                Array.isArray(plansResponse.data)
+                    ? plansResponse.data
                     : []
             );
 
-        } catch (error) {
-
-            console.error(
-                "Error fetching workout plans:",
-                error
+            setExercises(
+                Array.isArray(exercisesResponse.data)
+                    ? exercisesResponse.data
+                    : []
             );
 
-            if (error.response?.status === 401) {
+        } catch (requestError) {
 
+            console.error(
+                "Error loading workout plans:",
+                requestError
+            );
+
+            if (
+                requestError.response?.status === 401
+            ) {
                 setError(
                     "Your session has expired. Please login again."
                 );
-
             } else {
-
                 setError(
+                    requestError.response?.data?.message ||
                     "Unable to load workout plans."
                 );
             }
 
         } finally {
-
             setLoading(false);
+        }
+    };
 
+    // =====================================================
+    // FILTER EXERCISES BY CATEGORY
+    // =====================================================
+
+    const filteredExercises = useMemo(() => {
+
+        return exercises.filter(
+            (exercise) =>
+                categoryMatches(
+                    planForm.category,
+                    exercise.category
+                )
+        );
+
+    }, [exercises, planForm.category]);
+
+    // =====================================================
+    // OPEN CREATE
+    // =====================================================
+
+    const openCreateForm = () => {
+
+        setEditingPlan(null);
+
+        setPlanForm({
+            ...emptyPlanForm
+        });
+
+        setExerciseRows([
+            createEmptyExerciseRow()
+        ]);
+
+        setNewlyCreatedPlanId(null);
+        setActionError("");
+
+        setShowForm(true);
+    };
+
+    // =====================================================
+    // OPEN EDIT
+    // =====================================================
+
+    const openEditForm = async (plan) => {
+
+        try {
+
+            setActionError("");
+            setEditingPlan(plan);
+
+            setPlanForm({
+                name: plan.name || "",
+                description:
+                    plan.description || "",
+                category:
+                    plan.category || "Full Body",
+                difficulty:
+                    plan.difficulty || "Beginner"
+            });
+
+            const response =
+                await api.get(
+                    `/workout-plan-exercises/plan/${plan.id}`
+                );
+
+            const existingExercises =
+                Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
+            if (existingExercises.length === 0) {
+
+                setExerciseRows([
+                    createEmptyExerciseRow()
+                ]);
+
+            } else {
+
+                setExerciseRows(
+                    existingExercises.map(
+                        (item) => {
+
+                            const trackingType =
+                                item.trackingType ===
+                                "TIME"
+                                    ? "TIME"
+                                    : "REPS";
+
+                            return {
+                                exerciseId:
+                                    String(
+                                        item.exerciseId ||
+                                        ""
+                                    ),
+
+                                trackingType,
+
+                                targetValue:
+                                    Number(
+                                        item.targetValue ||
+                                        item.durationSeconds ||
+                                        10
+                                    ),
+
+                                targetSets:
+                                    Number(
+                                        item.targetSets ||
+                                        1
+                                    ),
+
+                                restSeconds:
+                                    Number(
+                                        item.restSeconds ||
+                                        0
+                                    )
+                            };
+                        }
+                    )
+                );
+            }
+
+            setShowForm(true);
+
+        } catch (requestError) {
+
+            console.error(
+                "Error loading plan for editing:",
+                requestError
+            );
+
+            setEditingPlan(null);
+
+            setActionError(
+                requestError.response?.data?.message ||
+                "Unable to load this workout plan for editing."
+            );
+        }
+    };
+
+    // =====================================================
+    // CLOSE FORM
+    // =====================================================
+
+    const closeForm = () => {
+
+        if (saving) {
+            return;
+        }
+
+        setShowForm(false);
+        setEditingPlan(null);
+
+        setPlanForm({
+            ...emptyPlanForm
+        });
+
+        setExerciseRows([
+            createEmptyExerciseRow()
+        ]);
+
+        setNewlyCreatedPlanId(null);
+        setActionError("");
+    };
+
+    // =====================================================
+    // PLAN FORM CHANGE
+    // =====================================================
+
+    const handlePlanChange = (event) => {
+
+        const {
+            name,
+            value
+        } = event.target;
+
+        setPlanForm(
+            (previous) => ({
+                ...previous,
+                [name]: value
+            })
+        );
+
+        /*
+         * Changing category changes the available
+         * exercises, so reset the selected rows.
+         */
+        if (name === "category") {
+
+            setExerciseRows([
+                createEmptyExerciseRow()
+            ]);
+        }
+    };
+
+    // =====================================================
+    // EXERCISE ROW CHANGE
+    // =====================================================
+
+    const updateExerciseRow = (
+        index,
+        field,
+        value
+    ) => {
+
+        setExerciseRows(
+            (previous) =>
+                previous.map(
+                    (row, rowIndex) => {
+
+                        if (
+                            rowIndex !== index
+                        ) {
+                            return row;
+                        }
+
+                        /*
+                         * Picking an exercise pre-fills the
+                         * target from its library defaults.
+                         */
+                        if (field === "exerciseId") {
+
+                            const selected =
+                                exercises.find(
+                                    (exercise) =>
+                                        String(exercise.id) ===
+                                        String(value)
+                                );
+
+                            if (selected?.trackingType) {
+
+                                const isTime =
+                                    selected.trackingType ===
+                                    "TIME";
+
+                                return {
+                                    ...row,
+                                    exerciseId: value,
+                                    trackingType:
+                                        selected.trackingType,
+                                    targetValue: isTime
+                                        ? selected.durationSeconds || 30
+                                        : selected.defaultReps || 12,
+                                    restSeconds:
+                                        selected.restSeconds ??
+                                        row.restSeconds
+                                };
+                            }
+                        }
+
+                        return {
+                            ...row,
+                            [field]: value
+                        };
+                    }
+                )
+        );
+    };
+
+    // =====================================================
+    // ADD EXERCISE ROW
+    // =====================================================
+
+    const addExerciseRow = () => {
+
+        setExerciseRows(
+            (previous) => [
+                ...previous,
+                createEmptyExerciseRow()
+            ]
+        );
+    };
+
+    // =====================================================
+    // REMOVE EXERCISE ROW
+    // =====================================================
+
+    const removeExerciseRow = (index) => {
+
+        setExerciseRows(
+            (previous) => {
+
+                if (previous.length === 1) {
+                    return [
+                        createEmptyExerciseRow()
+                    ];
+                }
+
+                return previous.filter(
+                    (_, rowIndex) =>
+                        rowIndex !== index
+                );
+            }
+        );
+    };
+
+    // =====================================================
+    // CREATE / UPDATE PLAN
+    // =====================================================
+
+    const savePlan = async (event) => {
+
+        event.preventDefault();
+
+        if (!planForm.name.trim()) {
+
+            setActionError(
+                "Please enter a Plan Name."
+            );
+
+            return;
+        }
+
+        const validRows =
+            exerciseRows.filter(
+                (row) =>
+                    row.exerciseId &&
+                    Number(row.targetValue) > 0 &&
+                    Number(row.targetSets) > 0
+            );
+
+        if (validRows.length === 0) {
+
+            setActionError(
+                "Please add at least one valid exercise."
+            );
+
+            return;
+        }
+
+        // Local copy: state updates are not visible
+        // inside this handler until the next render.
+        let createdPlanId = null;
+
+        try {
+
+            setSaving(true);
+            setActionError("");
+
+            let planId;
+
+            // =================================================
+            // UPDATE EXISTING PLAN
+            // =================================================
+
+            if (editingPlan) {
+
+                const planPayload = {
+                    name: planForm.name.trim(),
+                    description:
+                        planForm.description.trim(),
+                    category:
+                        planForm.category,
+                    difficulty:
+                        planForm.difficulty
+                };
+
+                const planResponse =
+                    await api.put(
+                        `/workout-plans/${editingPlan.id}`,
+                        planPayload
+                    );
+
+                planId =
+                    planResponse.data?.id ||
+                    editingPlan.id;
+
+            } else {
+
+                // =================================================
+                // CREATE NEW PLAN
+                // =================================================
+
+                const planPayload = {
+                    name: planForm.name.trim(),
+                    description:
+                        planForm.description.trim(),
+                    category:
+                        planForm.category,
+                    difficulty:
+                        planForm.difficulty
+                };
+
+                const planResponse =
+                    await api.post(
+                        "/workout-plans",
+                        planPayload
+                    );
+
+                planId =
+                    planResponse.data?.id;
+
+                if (!planId) {
+                    throw new Error(
+                        "Workout plan was created but no plan ID was returned."
+                    );
+                }
+
+                createdPlanId = planId;
+            }
+
+            // =================================================
+            // SAVE CONFIGURED EXERCISES
+            // =================================================
+            // One request, one backend transaction: the old
+            // exercises are replaced only if every new one is valid.
+
+            const exercisesPayload =
+                validRows.map((row) => {
+
+                const targetValue =
+                    Math.max(
+                        1,
+                        Number(
+                            row.targetValue
+                        ) || 1
+                    );
+
+                const targetSets =
+                    Math.max(
+                        1,
+                        Number(
+                            row.targetSets
+                        ) || 1
+                    );
+
+                const restSeconds =
+                    Math.max(
+                        0,
+                        Number(
+                            row.restSeconds
+                        ) || 0
+                    );
+
+                return {
+                    exerciseId:
+                        Number(
+                            row.exerciseId
+                        ),
+
+                    restSeconds,
+
+                    trackingType:
+                        row.trackingType,
+
+                    targetValue,
+
+                    targetSets
+                };
+            });
+
+            try {
+
+                await api.put(
+                    `/workout-plan-exercises/plan/${planId}`,
+                    {
+                        exercises:
+                            exercisesPayload
+                    }
+                );
+
+            } catch (exerciseError) {
+
+                /*
+                 * A new plan without exercises is useless:
+                 * remove it so the user can simply retry.
+                 */
+                if (createdPlanId) {
+
+                    try {
+
+                        await api.delete(
+                            `/workout-plans/${createdPlanId}`
+                        );
+
+                        createdPlanId = null;
+
+                    } catch (cleanupError) {
+
+                        console.error(
+                            "Error removing incomplete plan:",
+                            cleanupError
+                        );
+                    }
+                }
+
+                throw exerciseError;
+            }
+
+            // =================================================
+            // REFRESH PLANS
+            // =================================================
+
+            const refreshed =
+                await api.get(
+                    "/workout-plans"
+                );
+
+            setWorkoutPlans(
+                Array.isArray(
+                    refreshed.data
+                )
+                    ? refreshed.data
+                    : []
+            );
+
+            setNewlyCreatedPlanId(null);
+
+            closeForm();
+
+        } catch (requestError) {
+
+            console.error(
+                "Error saving workout plan:",
+                requestError
+            );
+
+            let message =
+                requestError.response?.data?.message ||
+                requestError.response?.data?.error ||
+                requestError.message ||
+                "Unable to save workout plan.";
+
+            /*
+             * Automatic cleanup failed: keep the created
+             * plan ID so the user can delete it.
+             */
+            if (createdPlanId) {
+
+                setNewlyCreatedPlanId(
+                    createdPlanId
+                );
+
+                message +=
+                    " The plan was partially created. You can delete it below.";
+            }
+
+            setActionError(message);
+
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // =====================================================
+    // DELETE EXISTING PLAN
+    // =====================================================
+
+    const deletePlan = async (plan) => {
+
+        const confirmed =
+            window.confirm(
+                `Delete "${plan.name}"?\n\nThis will remove the workout plan and its configured exercises. This action cannot be undone.`
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            setActionError("");
+
+            await api.delete(
+                `/workout-plans/${plan.id}`
+            );
+
+            setWorkoutPlans(
+                (previous) =>
+                    previous.filter(
+                        (item) =>
+                            item.id !== plan.id
+                    )
+            );
+
+        } catch (requestError) {
+
+            console.error(
+                "Error deleting workout plan:",
+                requestError
+            );
+
+            setActionError(
+                requestError.response?.data?.message ||
+                requestError.response?.data?.error ||
+                "Unable to delete this workout plan."
+            );
+        }
+    };
+
+    // =====================================================
+    // DELETE PARTIALLY CREATED PLAN
+    // =====================================================
+
+    const deletePartialPlan = async () => {
+
+        if (!newlyCreatedPlanId) {
+            return;
+        }
+
+        const confirmed =
+            window.confirm(
+                "Delete the partially created workout plan?"
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            await api.delete(
+                `/workout-plans/${newlyCreatedPlanId}`
+            );
+
+            setNewlyCreatedPlanId(null);
+
+            setActionError(
+                "Partially created plan deleted."
+            );
+
+            const refreshed =
+                await api.get(
+                    "/workout-plans"
+                );
+
+            setWorkoutPlans(
+                Array.isArray(
+                    refreshed.data
+                )
+                    ? refreshed.data
+                    : []
+            );
+
+        } catch (requestError) {
+
+            console.error(
+                "Error deleting partial plan:",
+                requestError
+            );
+
+            setActionError(
+                requestError.response?.data?.message ||
+                "Unable to delete the partially created plan."
+            );
         }
     };
 
@@ -69,80 +828,9 @@ function WorkoutPlans() {
 
     const startWorkout = (planId) => {
 
-        navigate(`/workout-player/${planId}`);
-
-    };
-
-    // =====================================================
-    // DIFFICULTY STYLE
-    // =====================================================
-
-    const getDifficultyStyle = (difficulty) => {
-
-        const value =
-            String(difficulty || "")
-                .toLowerCase();
-
-        if (value === "beginner") {
-
-            return {
-                backgroundColor:
-                    "var(--wt-success-soft, #eaf8ee)",
-                color:
-                    "var(--wt-success, #218739)"
-            };
-
-        }
-
-        if (value === "intermediate") {
-
-            return {
-                backgroundColor:
-                    "var(--wt-warning-soft, #fff6dc)",
-                color:
-                    "var(--wt-warning, #a87500)"
-            };
-
-        }
-
-        if (value === "advanced") {
-
-            return {
-                backgroundColor:
-                    "var(--wt-danger-soft, #ffeaea)",
-                color:
-                    "var(--wt-danger, #c83232)"
-            };
-
-        }
-
-        return {
-            backgroundColor:
-                "var(--wt-surface-secondary)",
-            color:
-                "var(--wt-text-primary)"
-        };
-    };
-
-    const getDifficultyIcon = (difficulty) => {
-
-        const value =
-            String(difficulty || "")
-                .toLowerCase();
-
-        if (value === "beginner") {
-            return "🟢";
-        }
-
-        if (value === "intermediate") {
-            return "🟡";
-        }
-
-        if (value === "advanced") {
-            return "🔴";
-        }
-
-        return "⚪";
+        navigate(
+            `/workout-player/${planId}`
+        );
     };
 
     // =====================================================
@@ -152,25 +840,16 @@ function WorkoutPlans() {
     if (loading) {
 
         return (
-
-            <div style={styles.centerContainer}>
-
+            <div style={styles.center}>
                 <div style={styles.loadingIcon}>
-                    💪
+                    🏋️
                 </div>
 
-                <h2 style={styles.loadingText}>
-                    Loading workout plans...
+                <h2>
+                    Loading Workout Plans...
                 </h2>
-
-                <p style={styles.centerSubtext}>
-                    Preparing your training plans
-                </p>
-
             </div>
-
         );
-
     }
 
     // =====================================================
@@ -180,282 +859,791 @@ function WorkoutPlans() {
     if (error) {
 
         return (
-
-            <div style={styles.centerContainer}>
+            <div style={styles.center}>
 
                 <div style={styles.errorIcon}>
                     ⚠️
                 </div>
 
-                <h2 style={styles.errorTitle}>
-                    {error}
+                <h2>
+                    Unable to load Workout Plans
                 </h2>
 
+                <p style={styles.errorText}>
+                    {error}
+                </p>
+
                 <button
-                    type="button"
-                    style={styles.button}
-                    onClick={fetchWorkoutPlans}
+                    style={styles.primaryButton}
+                    onClick={loadData}
                 >
                     Try Again
                 </button>
 
             </div>
-
         );
-
     }
 
     // =====================================================
-    // MAIN PAGE
+    // PAGE
     // =====================================================
 
-   return (
-    <div
-        className="wt-workout-plans-page"
-        style={styles.page}
-    >
+    return (
+        <div style={styles.page}>
 
             <div style={styles.container}>
 
-                {/* =================================================
-                    HEADER
-                ================================================= */}
+                {/* HEADER */}
 
                 <div style={styles.header}>
 
-                    <div style={styles.headerContent}>
+                    <div>
 
-                        <p style={styles.eyebrow}>
-                            TRAIN SMART
-                        </p>
+                        <div style={styles.eyebrow}>
+                            TRAIN SMARTER
+                        </div>
 
                         <h1 style={styles.title}>
                             Workout Plans
                         </h1>
 
                         <p style={styles.subtitle}>
-                            Choose a workout plan and start
-                            training at your own pace.
+                            Choose a plan or build your
+                            own personalized workout.
                         </p>
 
                     </div>
 
-                    <div style={styles.headerBadge}>
-
-                        <span style={styles.headerBadgeIcon}>
-                            🏋️
-                        </span>
-
-                        <span>
-                            {workoutPlans.length}{" "}
-                            {workoutPlans.length === 1
-                                ? "Plan"
-                                : "Plans"}
-                        </span>
-
-                    </div>
+                    <button
+                        style={styles.createButton}
+                        onClick={
+                            openCreateForm
+                        }
+                    >
+                        + Make Your Own Plan
+                    </button>
 
                 </div>
 
-                {/* =================================================
-                    EMPTY STATE
-                ================================================= */}
+                {/* ERROR */}
+
+                {actionError && (
+                    <div style={styles.actionError}>
+
+                        <span>
+                            {actionError}
+                        </span>
+
+                        {newlyCreatedPlanId && (
+                            <button
+                                type="button"
+                                style={
+                                    styles.partialDeleteButton
+                                }
+                                onClick={
+                                    deletePartialPlan
+                                }
+                            >
+                                Delete Partial Plan
+                            </button>
+                        )}
+
+                    </div>
+                )}
+
+                {/* PLANS */}
 
                 {workoutPlans.length === 0 ? (
 
-                    <div style={styles.emptyContainer}>
+                    <div style={styles.emptyCard}>
 
                         <div style={styles.emptyIcon}>
                             🏋️
                         </div>
 
-                        <h2 style={styles.emptyTitle}>
-                            No workout plans found
+                        <h2>
+                            No workout plans yet
                         </h2>
 
-                        <p style={styles.emptyText}>
-                            Create your first workout plan
-                            to get started.
+                        <p>
+                            Create your first
+                            personalized workout plan.
                         </p>
+
+                        <button
+                            style={
+                                styles.primaryButton
+                            }
+                            onClick={
+                                openCreateForm
+                            }
+                        >
+                            Create Workout Plan
+                        </button>
 
                     </div>
 
                 ) : (
 
-                    /* =================================================
-                       WORKOUT PLAN GRID
-                    ================================================= */
-
                     <div style={styles.grid}>
 
                         {workoutPlans.map(
-                            (plan, index) => (
+                            (plan) => (
 
                                 <div
                                     key={plan.id}
                                     style={styles.card}
                                 >
 
-                                    {/* ==========================
-                                        CARD TOP
-                                    ========================== */}
+                                    <div
+                                        style={
+                                            styles.cardTop
+                                        }
+                                    >
 
-                                    <div style={styles.cardTop}>
+                                        <div>
 
-                                        <div style={styles.planIcon}>
+                                            <div
+                                                style={
+                                                    styles.categoryBadge
+                                                }
+                                            >
+                                                {
+                                                    plan.category ||
+                                                    "General"
+                                                }
+                                            </div>
 
-                                            {index % 4 === 0
-                                                ? "🔥"
-                                                : index % 4 === 1
-                                                    ? "💪"
-                                                    : index % 4 === 2
-                                                        ? "⚡"
-                                                        : "🏆"}
+                                            <h2
+                                                style={
+                                                    styles.cardTitle
+                                                }
+                                            >
+                                                {
+                                                    plan.name
+                                                }
+                                            </h2>
 
                                         </div>
 
                                         <span
                                             style={
-                                                styles.planNumber
+                                                styles.difficultyBadge
                                             }
                                         >
-                                            PLAN {index + 1}
+                                            {
+                                                plan.difficulty ||
+                                                "Beginner"
+                                            }
                                         </span>
 
                                     </div>
-
-                                    {/* ==========================
-                                        PLAN NAME
-                                    ========================== */}
-
-                                    <h2 style={styles.cardTitle}>
-                                        {plan.name ||
-                                            "Workout Plan"}
-                                    </h2>
-
-                                    {/* ==========================
-                                        DESCRIPTION
-                                    ========================== */}
 
                                     <p
                                         style={
                                             styles.description
                                         }
                                     >
-                                        {plan.description ||
-                                            "A great workout plan designed to help you improve your fitness."}
+                                        {
+                                            plan.description ||
+                                            "Personalized workout plan"
+                                        }
                                     </p>
-
-                                    {/* ==========================
-                                        INFORMATION
-                                    ========================== */}
 
                                     <div
                                         style={
-                                            styles.infoContainer
+                                            styles.cardActions
                                         }
                                     >
 
-                                        {plan.category && (
-
-                                            <span
-                                                style={
-                                                    styles.categoryBadge
-                                                }
-                                            >
-                                                🏷️{" "}
-                                                {plan.category}
-                                            </span>
-
-                                        )}
-
-                                        {plan.difficulty && (
-
-                                            <span
-                                                style={{
-                                                    ...styles.difficultyBadge,
-                                                    ...getDifficultyStyle(
-                                                        plan.difficulty
-                                                    )
-                                                }}
-                                            >
-
-                                                {getDifficultyIcon(
-                                                    plan.difficulty
-                                                )}{" "}
-
-                                                {plan.difficulty}
-
-                                            </span>
-
-                                        )}
-
-                                    </div>
-
-                                    {/* ==========================
-                                        PLAN ID / CREATED INFO
-                                    ========================== */}
-
-                                    <div style={styles.metaRow}>
-
-                                        <span style={styles.metaText}>
-                                            Plan ID: {plan.id}
-                                        </span>
-
-                                        {plan.createdAt && (
-
-                                            <span
-                                                style={
-                                                    styles.metaText
-                                                }
-                                            >
-                                                Created{" "}
-                                                {new Date(
-                                                    plan.createdAt
-                                                ).toLocaleDateString()}
-                                            </span>
-
-                                        )}
-
-                                    </div>
-
-                                    {/* ==========================
-                                        START BUTTON
-                                    ========================== */}
-
-                                    <button
-                                        type="button"
-                                        style={styles.startButton}
-                                        onClick={() =>
-                                            startWorkout(plan.id)
-                                        }
-                                    >
-
-                                        <span>
-                                            Start Workout
-                                        </span>
-
-                                        <span
-                                            style={styles.arrow}
+                                        <button
+                                            type="button"
+                                            style={
+                                                styles.startButton
+                                            }
+                                            onClick={() =>
+                                                startWorkout(
+                                                    plan.id
+                                                )
+                                            }
                                         >
-                                            →
-                                        </span>
+                                            ▶ Start Workout
+                                        </button>
 
-                                    </button>
+                                        <button
+                                            type="button"
+                                            style={
+                                                styles.editButton
+                                            }
+                                            onClick={() =>
+                                                openEditForm(
+                                                    plan
+                                                )
+                                            }
+                                        >
+                                            ✎ Edit
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            style={
+                                                styles.deleteButton
+                                            }
+                                            onClick={() =>
+                                                deletePlan(
+                                                    plan
+                                                )
+                                            }
+                                        >
+                                            🗑 Delete
+                                        </button>
+
+                                    </div>
 
                                 </div>
-
                             )
                         )}
 
                     </div>
-
                 )}
 
             </div>
 
-        </div>
+            {/* =================================================
+                CREATE / EDIT MODAL
+            ================================================= */}
 
+            {showForm && (
+
+                <div
+                    style={styles.overlay}
+                    onMouseDown={closeForm}
+                >
+
+                    <form
+                        style={styles.modal}
+                        onMouseDown={(event) =>
+                            event.stopPropagation()
+                        }
+                        onSubmit={savePlan}
+                    >
+
+                        <div
+                            style={
+                                styles.modalHeader
+                            }
+                        >
+
+                            <div>
+
+                                <div
+                                    style={
+                                        styles.eyebrow
+                                    }
+                                >
+                                    {editingPlan
+                                        ? "UPDATE PLAN"
+                                        : "CREATE PLAN"}
+                                </div>
+
+                                <h2
+                                    style={
+                                        styles.modalTitle
+                                    }
+                                >
+                                    {editingPlan
+                                        ? "Edit Workout Plan"
+                                        : "Make Your Own Plan"}
+                                </h2>
+
+                            </div>
+
+                            <button
+                                type="button"
+                                style={
+                                    styles.closeButton
+                                }
+                                onClick={
+                                    closeForm
+                                }
+                            >
+                                ✕
+                            </button>
+
+                        </div>
+
+                        {/* PLAN DETAILS */}
+
+                        <div
+                            style={
+                                styles.formGrid
+                            }
+                        >
+
+                            <label
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Plan Name *
+
+                                <input
+                                    name="name"
+                                    value={
+                                        planForm.name
+                                    }
+                                    onChange={
+                                        handlePlanChange
+                                    }
+                                    placeholder="e.g. My Chest Workout"
+                                    style={
+                                        styles.input
+                                    }
+                                    required
+                                />
+
+                            </label>
+
+                            <label
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Description
+
+                                <textarea
+                                    name="description"
+                                    value={
+                                        planForm.description
+                                    }
+                                    onChange={
+                                        handlePlanChange
+                                    }
+                                    placeholder="Describe your workout..."
+                                    style={
+                                        styles.textarea
+                                    }
+                                    rows="3"
+                                />
+
+                            </label>
+
+                            <label
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Category *
+
+                                <select
+                                    name="category"
+                                    value={
+                                        planForm.category
+                                    }
+                                    onChange={
+                                        handlePlanChange
+                                    }
+                                    style={
+                                        styles.input
+                                    }
+                                >
+
+                                    {CATEGORIES.map(
+                                        (category) => (
+                                            <option
+                                                key={
+                                                    category
+                                                }
+                                                value={
+                                                    category
+                                                }
+                                            >
+                                                {
+                                                    category
+                                                }
+                                            </option>
+                                        )
+                                    )}
+
+                                </select>
+
+                            </label>
+
+                            <label
+                                style={
+                                    styles.inputLabel
+                                }
+                            >
+                                Difficulty *
+
+                                <select
+                                    name="difficulty"
+                                    value={
+                                        planForm.difficulty
+                                    }
+                                    onChange={
+                                        handlePlanChange
+                                    }
+                                    style={
+                                        styles.input
+                                    }
+                                >
+
+                                    {DIFFICULTIES.map(
+                                        (difficulty) => (
+                                            <option
+                                                key={
+                                                    difficulty
+                                                }
+                                                value={
+                                                    difficulty
+                                                }
+                                            >
+                                                {
+                                                    difficulty
+                                                }
+                                            </option>
+                                        )
+                                    )}
+
+                                </select>
+
+                            </label>
+
+                        </div>
+
+                        {/* EXERCISES */}
+
+                        <div
+                            style={
+                                styles.exerciseSection
+                            }
+                        >
+
+                            <div
+                                style={
+                                    styles.exerciseHeader
+                                }
+                            >
+
+                                <div>
+
+                                    <h3
+                                        style={
+                                            styles.exerciseTitle
+                                        }
+                                    >
+                                        Add Exercises
+                                    </h3>
+
+                                    <p
+                                        style={
+                                            styles.exerciseHint
+                                        }
+                                    >
+                                        Showing exercises
+                                        from{" "}
+                                        <strong>
+                                            {
+                                                planForm.category
+                                            }
+                                        </strong>
+                                    </p>
+
+                                </div>
+
+                                <button
+                                    type="button"
+                                    style={
+                                        styles.addExerciseButton
+                                    }
+                                    onClick={
+                                        addExerciseRow
+                                    }
+                                >
+                                    + Add Exercise
+                                </button>
+
+                            </div>
+
+                            {filteredExercises.length ===
+                                0 ? (
+
+                                <div
+                                    style={
+                                        styles.noExercises
+                                    }
+                                >
+                                    No exercises found
+                                    for this category.
+                                </div>
+
+                            ) : (
+
+                                <div
+                                    style={
+                                        styles.exerciseRows
+                                    }
+                                >
+
+                                    {exerciseRows.map(
+                                        (
+                                            row,
+                                            index
+                                        ) => (
+
+                                            <div
+                                                key={
+                                                    index
+                                                }
+                                                style={
+                                                    styles.exerciseRow
+                                                }
+                                            >
+
+                                                <div
+                                                    style={
+                                                        styles.rowNumber
+                                                    }
+                                                >
+                                                    {index +
+                                                        1}
+                                                </div>
+
+                                                <select
+                                                    value={
+                                                        row.exerciseId
+                                                    }
+                                                    onChange={(
+                                                        event
+                                                    ) =>
+                                                        updateExerciseRow(
+                                                            index,
+                                                            "exerciseId",
+                                                            event
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    style={
+                                                        styles.exerciseSelect
+                                                    }
+                                                >
+
+                                                    <option value="">
+                                                        Select exercise
+                                                    </option>
+
+                                                    {filteredExercises.map(
+                                                        (
+                                                            exercise
+                                                        ) => (
+
+                                                            <option
+                                                                key={
+                                                                    exercise.id
+                                                                }
+                                                                value={
+                                                                    exercise.id
+                                                                }
+                                                            >
+                                                                {
+                                                                    exercise.name
+                                                                }
+                                                            </option>
+
+                                                        )
+                                                    )}
+
+                                                </select>
+
+                                                <select
+                                                    value={
+                                                        row.trackingType
+                                                    }
+                                                    onChange={(
+                                                        event
+                                                    ) =>
+                                                        updateExerciseRow(
+                                                            index,
+                                                            "trackingType",
+                                                            event
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    style={
+                                                        styles.smallSelect
+                                                    }
+                                                >
+
+                                                    <option value="REPS">
+                                                        REPS
+                                                    </option>
+
+                                                    <option value="TIME">
+                                                        TIME
+                                                    </option>
+
+                                                </select>
+
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={
+                                                        row.targetValue
+                                                    }
+                                                    onChange={(
+                                                        event
+                                                    ) =>
+                                                        updateExerciseRow(
+                                                            index,
+                                                            "targetValue",
+                                                            event
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    style={
+                                                        styles.numberInput
+                                                    }
+                                                    placeholder={
+                                                        row.trackingType ===
+                                                        "TIME"
+                                                            ? "Seconds"
+                                                            : "Reps"
+                                                    }
+                                                />
+
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={
+                                                        row.targetSets
+                                                    }
+                                                    onChange={(
+                                                        event
+                                                    ) =>
+                                                        updateExerciseRow(
+                                                            index,
+                                                            "targetSets",
+                                                            event
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    style={
+                                                        styles.numberInput
+                                                    }
+                                                    placeholder="Sets"
+                                                />
+
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={
+                                                        row.restSeconds
+                                                    }
+                                                    onChange={(
+                                                        event
+                                                    ) =>
+                                                        updateExerciseRow(
+                                                            index,
+                                                            "restSeconds",
+                                                            event
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    style={
+                                                        styles.numberInput
+                                                    }
+                                                    placeholder="Rest"
+                                                />
+
+                                                <button
+                                                    type="button"
+                                                    style={
+                                                        styles.removeButton
+                                                    }
+                                                    onClick={() =>
+                                                        removeExerciseRow(
+                                                            index
+                                                        )
+                                                    }
+                                                >
+                                                    ✕
+                                                </button>
+
+                                            </div>
+
+                                        )
+                                    )}
+
+                                </div>
+                            )}
+
+                        </div>
+
+                        {/* FORM ERROR */}
+
+                        {actionError && (
+                            <div
+                                style={
+                                    styles.formError
+                                }
+                            >
+                                {actionError}
+                            </div>
+                        )}
+
+                        {/* ACTIONS */}
+
+                        <div
+                            style={
+                                styles.modalActions
+                            }
+                        >
+
+                            <button
+                                type="button"
+                                style={
+                                    styles.cancelButton
+                                }
+                                onClick={
+                                    closeForm
+                                }
+                                disabled={saving}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="submit"
+                                style={
+                                    styles.saveButton
+                                }
+                                disabled={
+                                    saving ||
+                                    filteredExercises.length ===
+                                        0
+                                }
+                            >
+                                {saving
+                                    ? "Saving..."
+                                    : editingPlan
+                                        ? "Update Plan"
+                                        : "Create Plan"}
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            )}
+
+        </div>
     );
 }
 
@@ -466,340 +1654,520 @@ function WorkoutPlans() {
 const styles = {
 
     page: {
-        minHeight: "100vh",
-        background:
+        minHeight: "calc(100vh - 70px)",
+        backgroundColor:
             "var(--wt-page-background)",
         color:
             "var(--wt-text-primary)",
-        padding: "45px 20px",
-        transition:
-            "background-color 0.25s ease, color 0.25s ease"
+        padding: "40px 20px",
+        boxSizing: "border-box"
     },
 
     container: {
-        maxWidth: "1200px",
+        maxWidth: "1150px",
         margin: "0 auto"
     },
-
-    // =================================================
-    // HEADER
-    // =================================================
 
     header: {
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "flex-end",
-        gap: "24px",
-        marginBottom: "35px",
+        alignItems: "center",
+        gap: "20px",
+        marginBottom: "30px",
         flexWrap: "wrap"
     },
 
-    headerContent: {
-        minWidth: 0
-    },
-
     eyebrow: {
-        margin: "0 0 8px 0",
         fontSize: "12px",
         fontWeight: "800",
         letterSpacing: "2px",
-        color:
-            "var(--wt-text-muted)"
+        color: "var(--wt-accent)",
+        marginBottom: "8px"
     },
 
     title: {
-        margin: "0",
+        margin: 0,
         fontSize: "38px",
         fontWeight: "800",
-        letterSpacing: "-1px",
-        color:
-            "var(--wt-text-primary)"
+        color: "var(--wt-text-primary)"
     },
 
     subtitle: {
-        margin: "10px 0 0 0",
-        color:
-            "var(--wt-text-secondary)",
-        fontSize: "16px",
-        lineHeight: "1.6",
-        maxWidth: "650px"
+        marginTop: "8px",
+        color: "var(--wt-text-secondary)",
+        fontSize: "16px"
     },
 
-    headerBadge: {
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        backgroundColor:
-            "var(--wt-button-background)",
-        color:
-            "var(--wt-button-text)",
-        padding: "11px 17px",
-        borderRadius: "30px",
-        fontSize: "14px",
-        fontWeight: "700",
-        border:
-            "1px solid var(--wt-border)",
-        whiteSpace: "nowrap"
+    createButton: {
+        border: "none",
+        borderRadius: "12px",
+        padding: "13px 20px",
+        backgroundColor: "var(--wt-accent)",
+        color: "#ffffff",
+        cursor: "pointer",
+        fontWeight: "800"
     },
-
-    headerBadgeIcon: {
-        fontSize: "17px"
-    },
-
-    // =================================================
-    // GRID
-    // =================================================
 
     grid: {
         display: "grid",
         gridTemplateColumns:
-            "repeat(auto-fit, minmax(290px, 1fr))",
-        gap: "25px"
+            "repeat(auto-fit, minmax(320px, 1fr))",
+        gap: "20px"
     },
 
-    // =================================================
-    // CARD
-    // =================================================
-
     card: {
-        position: "relative",
         backgroundColor:
             "var(--wt-surface)",
-        color:
-            "var(--wt-text-primary)",
-        borderRadius: "22px",
-        padding: "26px",
-        boxShadow:
-            "var(--wt-shadow)",
         border:
             "1px solid var(--wt-border)",
-        transition:
-            "transform 0.2s ease, box-shadow 0.2s ease, background-color 0.25s ease",
-        minWidth: 0
+        borderRadius: "18px",
+        padding: "22px",
+        boxShadow:
+            "var(--wt-shadow)"
     },
 
     cardTop: {
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "20px"
+        alignItems: "flex-start",
+        gap: "12px"
     },
 
-    planIcon: {
-        width: "52px",
-        height: "52px",
-        borderRadius: "15px",
+    categoryBadge: {
+        display: "inline-block",
+        fontSize: "11px",
+        fontWeight: "800",
+        padding: "5px 9px",
+        borderRadius: "7px",
+        backgroundColor:
+            "rgba(37, 99, 235, 0.12)",
+        color:
+            "var(--wt-accent)"
+    },
+
+    cardTitle: {
+        margin: "10px 0 0",
+        fontSize: "22px",
+        color: "var(--wt-text-primary)"
+    },
+
+    difficultyBadge: {
+        padding: "6px 10px",
+        borderRadius: "8px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-secondary)",
+        fontSize: "11px",
+        fontWeight: "700"
+    },
+
+    description: {
+        color:
+            "var(--wt-text-secondary)",
+        lineHeight: 1.5,
+        minHeight: "45px"
+    },
+
+    cardActions: {
+        display: "flex",
+        gap: "8px",
+        flexWrap: "wrap",
+        marginTop: "20px"
+    },
+
+    startButton: {
+        flex: 1,
+        minWidth: "140px",
+        border: "none",
+        borderRadius: "10px",
+        padding: "11px 14px",
+        backgroundColor:
+            "var(--wt-accent)",
+        color: "#ffffff",
+        cursor: "pointer",
+        fontWeight: "800"
+    },
+
+    editButton: {
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "10px",
+        padding: "11px 14px",
         backgroundColor:
             "var(--wt-surface-secondary)",
         color:
             "var(--wt-text-primary)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "25px",
-        border:
-            "1px solid var(--wt-border)"
+        cursor: "pointer",
+        fontWeight: "700"
     },
 
-    planNumber: {
-        fontSize: "11px",
-        fontWeight: "800",
-        letterSpacing: "1px",
-        color:
-            "var(--wt-text-muted)"
-    },
-
-    cardTitle: {
-        margin: "0 0 12px 0",
-        fontSize: "23px",
-        fontWeight: "800",
-        color:
-            "var(--wt-text-primary)",
-        lineHeight: "1.3"
-    },
-
-    description: {
-        margin: "0 0 20px 0",
-        color:
-            "var(--wt-text-secondary)",
-        lineHeight: "1.6",
-        minHeight: "50px"
-    },
-
-    // =================================================
-    // BADGES
-    // =================================================
-
-    infoContainer: {
-        display: "flex",
-        gap: "8px",
-        flexWrap: "wrap",
-        marginBottom: "15px"
-    },
-
-    categoryBadge: {
+    deleteButton: {
+        border: "none",
+        borderRadius: "10px",
+        padding: "11px 14px",
         backgroundColor:
-            "var(--wt-accent-soft)",
+            "rgba(220, 38, 38, 0.12)",
         color:
-            "var(--wt-accent)",
-        padding: "7px 11px",
-        borderRadius: "20px",
-        fontSize: "12px",
-        fontWeight: "700",
-        border:
-            "1px solid var(--wt-border)"
+            "var(--wt-danger, #dc2626)",
+        cursor: "pointer",
+        fontWeight: "700"
     },
 
-    difficultyBadge: {
-        padding: "7px 11px",
-        borderRadius: "20px",
-        fontSize: "12px",
-        fontWeight: "700",
-        border:
-            "1px solid var(--wt-border)"
-    },
-
-    // =================================================
-    // META
-    // =================================================
-
-    metaRow: {
+    actionError: {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        gap: "10px",
+        gap: "15px",
         flexWrap: "wrap",
         marginBottom: "20px",
-        paddingTop: "12px",
-        borderTop:
-            "1px solid var(--wt-border)"
-    },
-
-    metaText: {
-        color:
-            "var(--wt-text-muted)",
-        fontSize: "12px"
-    },
-
-    // =================================================
-    // START BUTTON
-    // =================================================
-
-    startButton: {
-        width: "100%",
-        border:
-            "1px solid var(--wt-border)",
-        borderRadius: "13px",
-        padding: "14px 18px",
+        padding: "14px 16px",
+        borderRadius: "12px",
         backgroundColor:
-            "var(--wt-button-background)",
+            "rgba(220, 38, 38, 0.10)",
         color:
-            "var(--wt-button-text)",
-        fontSize: "15px",
-        fontWeight: "700",
+            "var(--wt-danger, #dc2626)",
+        border:
+            "1px solid rgba(220, 38, 38, 0.25)"
+    },
+
+    partialDeleteButton: {
+        border: "none",
+        borderRadius: "8px",
+        padding: "8px 12px",
+        backgroundColor:
+            "var(--wt-danger, #dc2626)",
+        color: "#ffffff",
         cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        transition:
-            "opacity 0.2s ease, transform 0.2s ease"
+        fontWeight: "700"
     },
 
-    arrow: {
-        fontSize: "20px"
-    },
-
-    // =================================================
-    // EMPTY
-    // =================================================
-
-    emptyContainer: {
+    emptyCard: {
         backgroundColor:
             "var(--wt-surface)",
-        color:
-            "var(--wt-text-primary)",
-        borderRadius: "22px",
-        padding: "70px 30px",
-        textAlign: "center",
-        boxShadow:
-            "var(--wt-shadow)",
         border:
-            "1px solid var(--wt-border)"
+            "1px solid var(--wt-border)",
+        borderRadius: "20px",
+        padding: "60px 30px",
+        textAlign: "center"
     },
 
     emptyIcon: {
-        fontSize: "55px",
-        marginBottom: "15px"
+        fontSize: "50px"
     },
 
-    emptyTitle: {
-        margin: "0 0 10px 0",
-        fontSize: "24px",
-        color:
-            "var(--wt-text-primary)"
-    },
-
-    emptyText: {
-        margin: "0",
-        color:
-            "var(--wt-text-secondary)"
-    },
-
-    // =================================================
-    // LOADING / ERROR
-    // =================================================
-
-    centerContainer: {
+    center: {
         minHeight: "70vh",
-        padding: "40px 20px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: "15px",
+        gap: "12px",
+        backgroundColor:
+            "var(--wt-page-background)",
         color:
-            "var(--wt-text-primary)",
-        textAlign: "center"
+            "var(--wt-text-primary)"
     },
 
     loadingIcon: {
         fontSize: "45px"
     },
 
-    loadingText: {
-        color:
-            "var(--wt-text-primary)",
-        margin: 0
-    },
-
-    centerSubtext: {
-        color:
-            "var(--wt-text-secondary)",
-        margin: 0
-    },
-
     errorIcon: {
         fontSize: "45px"
     },
 
-    errorTitle: {
+    errorText: {
         color:
-            "var(--wt-text-primary)",
-        textAlign: "center",
-        maxWidth: "600px"
+            "var(--wt-danger, #dc2626)"
     },
 
-    button: {
+    primaryButton: {
+        border: "none",
+        borderRadius: "10px",
+        padding: "12px 20px",
+        backgroundColor:
+            "var(--wt-accent)",
+        color: "#ffffff",
+        cursor: "pointer",
+        fontWeight: "700"
+    },
+
+    overlay: {
+        position: "fixed",
+        inset: 0,
+        backgroundColor:
+            "rgba(0,0,0,0.65)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "20px",
+        zIndex: 1000,
+        boxSizing: "border-box"
+    },
+
+    modal: {
+        width: "100%",
+        maxWidth: "1000px",
+        maxHeight: "90vh",
+        overflowY: "auto",
+        backgroundColor:
+            "var(--wt-surface)",
+        color:
+            "var(--wt-text-primary)",
+        borderRadius: "20px",
+        padding: "28px",
+        boxSizing: "border-box",
+        border:
+            "1px solid var(--wt-border)",
+        boxShadow:
+            "0 20px 60px rgba(0,0,0,0.35)"
+    },
+
+    modalHeader: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: "20px",
+        marginBottom: "25px"
+    },
+
+    modalTitle: {
+        margin: "5px 0 0",
+        fontSize: "28px"
+    },
+
+    closeButton: {
+        width: "38px",
+        height: "38px",
+        border: "none",
+        borderRadius: "50%",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-primary)",
+        cursor: "pointer",
+        fontSize: "16px"
+    },
+
+    formGrid: {
+        display: "grid",
+        gridTemplateColumns:
+            "repeat(2, minmax(0, 1fr))",
+        gap: "16px",
+        marginBottom: "25px"
+    },
+
+    inputLabel: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "7px",
+        color:
+            "var(--wt-text-primary)",
+        fontWeight: "700",
+        fontSize: "13px"
+    },
+
+    input: {
+        width: "100%",
+        boxSizing: "border-box",
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "9px",
+        padding: "11px 12px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-primary)",
+        outline: "none"
+    },
+
+    textarea: {
+        width: "100%",
+        boxSizing: "border-box",
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "9px",
+        padding: "11px 12px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-primary)",
+        resize: "vertical",
+        outline: "none"
+    },
+
+    exerciseSection: {
+        borderTop:
+            "1px solid var(--wt-border)",
+        paddingTop: "22px"
+    },
+
+    exerciseHeader: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: "15px",
+        marginBottom: "15px",
+        flexWrap: "wrap"
+    },
+
+    exerciseTitle: {
+        margin: 0,
+        color:
+            "var(--wt-text-primary)"
+    },
+
+    exerciseHint: {
+        margin: "5px 0 0",
+        color:
+            "var(--wt-text-secondary)",
+        fontSize: "13px"
+    },
+
+    addExerciseButton: {
+        border: "none",
+        borderRadius: "9px",
+        padding: "10px 14px",
+        backgroundColor:
+            "var(--wt-accent)",
+        color: "#ffffff",
+        cursor: "pointer",
+        fontWeight: "700"
+    },
+
+    noExercises: {
+        padding: "20px",
+        textAlign: "center",
+        borderRadius: "12px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-secondary)"
+    },
+
+    exerciseRows: {
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px"
+    },
+
+    exerciseRow: {
+        display: "grid",
+        gridTemplateColumns:
+            "35px minmax(180px, 2fr) 100px 100px 90px 90px 38px",
+        gap: "8px",
+        alignItems: "center",
+        padding: "10px",
+        borderRadius: "12px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        border:
+            "1px solid var(--wt-border)"
+    },
+
+    rowNumber: {
+        width: "28px",
+        height: "28px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "50%",
+        backgroundColor:
+            "var(--wt-accent)",
+        color: "#ffffff",
+        fontSize: "12px",
+        fontWeight: "800"
+    },
+
+    exerciseSelect: {
+        minWidth: 0,
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "8px",
+        padding: "9px",
+        backgroundColor:
+            "var(--wt-surface)",
+        color:
+            "var(--wt-text-primary)"
+    },
+
+    smallSelect: {
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "8px",
+        padding: "9px",
+        backgroundColor:
+            "var(--wt-surface)",
+        color:
+            "var(--wt-text-primary)"
+    },
+
+    numberInput: {
+        width: "100%",
+        boxSizing: "border-box",
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "8px",
+        padding: "9px",
+        backgroundColor:
+            "var(--wt-surface)",
+        color:
+            "var(--wt-text-primary)"
+    },
+
+    removeButton: {
+        width: "34px",
+        height: "34px",
+        border: "none",
+        borderRadius: "8px",
+        backgroundColor:
+            "rgba(220, 38, 38, 0.12)",
+        color:
+            "var(--wt-danger, #dc2626)",
+        cursor: "pointer",
+        fontWeight: "800"
+    },
+
+    formError: {
+        marginTop: "18px",
+        padding: "12px",
+        borderRadius: "10px",
+        backgroundColor:
+            "rgba(220, 38, 38, 0.10)",
+        color:
+            "var(--wt-danger, #dc2626)"
+    },
+
+    modalActions: {
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: "10px",
+        marginTop: "25px"
+    },
+
+    cancelButton: {
         border:
             "1px solid var(--wt-border)",
         borderRadius: "10px",
+        padding: "12px 20px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-primary)",
+        cursor: "pointer",
+        fontWeight: "700"
+    },
+
+    saveButton: {
+        border: "none",
+        borderRadius: "10px",
         padding: "12px 22px",
         backgroundColor:
-            "var(--wt-button-background)",
-        color:
-            "var(--wt-button-text)",
+            "var(--wt-accent)",
+        color: "#ffffff",
         cursor: "pointer",
-        fontWeight: "600"
+        fontWeight: "800"
     }
 };
 

@@ -4,7 +4,6 @@ import api from "../api/axiosConfig";
 import "./Analytics.css";
 
 function Analytics() {
-
     const navigate = useNavigate();
 
     const [summary, setSummary] = useState(null);
@@ -22,9 +21,7 @@ function Analytics() {
     }, []);
 
     const loadAnalytics = async () => {
-
         try {
-
             setLoading(true);
             setError("");
 
@@ -34,41 +31,31 @@ function Analytics() {
                     api.get("/analytics/prs")
                 ]);
 
-            setSummary(
-                summaryResponse.data || {}
-            );
+            setSummary(summaryResponse.data || {});
 
             setPrs(
                 Array.isArray(prsResponse.data)
                     ? prsResponse.data
                     : []
             );
-
-        } catch (error) {
-
+        } catch (requestError) {
             console.error(
                 "Error loading analytics:",
-                error
+                requestError
             );
 
-            if (error.response?.status === 401) {
-
+            if (requestError.response?.status === 401) {
                 setError(
                     "Your session has expired. Please login again."
                 );
-
             } else {
-
                 setError(
+                    requestError.response?.data?.message ||
                     "Unable to load analytics."
                 );
-
             }
-
         } finally {
-
             setLoading(false);
-
         }
     };
 
@@ -77,9 +64,7 @@ function Analytics() {
     // =====================================================
 
     const getNumber = (...values) => {
-
         for (const value of values) {
-
             if (
                 value !== undefined &&
                 value !== null &&
@@ -97,9 +82,7 @@ function Analytics() {
     };
 
     const getText = (...values) => {
-
         for (const value of values) {
-
             if (
                 value !== undefined &&
                 value !== null &&
@@ -113,6 +96,55 @@ function Analytics() {
     };
 
     // =====================================================
+    // FORMATTERS
+    // =====================================================
+
+    const formatNumber = (value) => {
+        return Number(value || 0).toLocaleString(
+            undefined,
+            {
+                maximumFractionDigits: 2
+            }
+        );
+    };
+
+    const formatDuration = (seconds) => {
+        const totalSeconds = Math.max(
+            0,
+            Math.round(Number(seconds || 0))
+        );
+
+        const minutes = Math.floor(
+            totalSeconds / 60
+        );
+
+        const remainingSeconds =
+            totalSeconds % 60;
+
+        if (minutes === 0) {
+            return `${remainingSeconds}s`;
+        }
+
+        if (remainingSeconds === 0) {
+            return `${minutes} min`;
+        }
+
+        return `${minutes}m ${remainingSeconds}s`;
+    };
+
+    const getTrackingType = (pr) => {
+        const value = String(
+            pr?.trackingType || ""
+        ).toUpperCase();
+
+        if (value === "TIME") {
+            return "TIME";
+        }
+
+        return "REPS";
+    };
+
+    // =====================================================
     // SUMMARY VALUES
     // =====================================================
 
@@ -122,48 +154,41 @@ function Analytics() {
         summary?.workouts
     );
 
+    /*
+     * Backend currently returns:
+     *
+     * totalDurationMinutes
+     *
+     * Keep old property names as fallbacks so
+     * existing responses continue working.
+     */
     const totalMinutes = getNumber(
+        summary?.totalDurationMinutes,
         summary?.totalMinutes,
         summary?.minutes,
         summary?.totalDuration
     );
 
     const totalSets = getNumber(
+        summary?.totalSetsCompleted,
         summary?.totalSets,
         summary?.sets,
         summary?.setCount
     );
 
     const totalVolume = getNumber(
+        summary?.totalVolumeLifted,
         summary?.totalVolume,
         summary?.volume
     );
-
-    // =====================================================
-    // FORMAT NUMBER
-    // =====================================================
-
-    const formatNumber = (value) => {
-
-        return Number(value || 0).toLocaleString(
-            undefined,
-            {
-                maximumFractionDigits: 2
-            }
-        );
-
-    };
 
     // =====================================================
     // LOADING
     // =====================================================
 
     if (loading) {
-
         return (
-
             <div style={styles.center}>
-
                 <div style={styles.loadingIcon}>
                     📊
                 </div>
@@ -175,11 +200,8 @@ function Analytics() {
                 <p style={styles.centerText}>
                     Preparing your workout statistics
                 </p>
-
             </div>
-
         );
-
     }
 
     // =====================================================
@@ -187,11 +209,8 @@ function Analytics() {
     // =====================================================
 
     if (error) {
-
         return (
-
             <div style={styles.center}>
-
                 <div style={styles.errorIcon}>
                     ⚠️
                 </div>
@@ -207,11 +226,8 @@ function Analytics() {
                 >
                     Try Again
                 </button>
-
             </div>
-
         );
-
     }
 
     // =====================================================
@@ -219,9 +235,10 @@ function Analytics() {
     // =====================================================
 
     return (
-
-        <div className="wt-analytics-page" style={styles.page}>
-
+        <div
+            className="wt-analytics-page"
+            style={styles.page}
+        >
             <div style={styles.container}>
 
                 {/* =================================================
@@ -229,9 +246,7 @@ function Analytics() {
                 ================================================= */}
 
                 <div style={styles.header}>
-
                     <div>
-
                         <div style={styles.eyebrow}>
                             PERFORMANCE
                         </div>
@@ -244,7 +259,6 @@ function Analytics() {
                             Understand your workout activity
                             and track your performance.
                         </p>
-
                     </div>
 
                     <button
@@ -256,19 +270,15 @@ function Analytics() {
                     >
                         View Progress →
                     </button>
-
                 </div>
 
                 {/* =================================================
-                    SUMMARY
+                    OVERVIEW
                 ================================================= */}
 
                 <section>
-
                     <div style={styles.sectionHeader}>
-
                         <div>
-
                             <h2 style={styles.sectionTitle}>
                                 Workout Overview
                             </h2>
@@ -276,9 +286,7 @@ function Analytics() {
                             <p style={styles.sectionSubtitle}>
                                 Your overall training activity
                             </p>
-
                         </div>
-
                     </div>
 
                     <div style={styles.summaryGrid}>
@@ -286,7 +294,6 @@ function Analytics() {
                         {/* WORKOUTS */}
 
                         <div style={styles.statCard}>
-
                             <div
                                 style={{
                                     ...styles.statIcon,
@@ -298,23 +305,21 @@ function Analytics() {
                             </div>
 
                             <div style={styles.statContent}>
-
                                 <span style={styles.statLabel}>
                                     Total Workouts
                                 </span>
 
                                 <strong style={styles.statValue}>
-                                    {formatNumber(totalWorkouts)}
+                                    {formatNumber(
+                                        totalWorkouts
+                                    )}
                                 </strong>
-
                             </div>
-
                         </div>
 
-                        {/* MINUTES */}
+                        {/* TIME */}
 
                         <div style={styles.statCard}>
-
                             <div
                                 style={{
                                     ...styles.statIcon,
@@ -326,23 +331,22 @@ function Analytics() {
                             </div>
 
                             <div style={styles.statContent}>
-
                                 <span style={styles.statLabel}>
-                                    Total Minutes
+                                    Training Time
                                 </span>
 
                                 <strong style={styles.statValue}>
-                                    {formatNumber(totalMinutes)}
+                                    {formatNumber(
+                                        totalMinutes
+                                    )}{" "}
+                                    min
                                 </strong>
-
                             </div>
-
                         </div>
 
                         {/* SETS */}
 
                         <div style={styles.statCard}>
-
                             <div
                                 style={{
                                     ...styles.statIcon,
@@ -354,23 +358,21 @@ function Analytics() {
                             </div>
 
                             <div style={styles.statContent}>
-
                                 <span style={styles.statLabel}>
                                     Total Sets
                                 </span>
 
                                 <strong style={styles.statValue}>
-                                    {formatNumber(totalSets)}
+                                    {formatNumber(
+                                        totalSets
+                                    )}
                                 </strong>
-
                             </div>
-
                         </div>
 
                         {/* VOLUME */}
 
                         <div style={styles.statCard}>
-
                             <div
                                 style={{
                                     ...styles.statIcon,
@@ -382,21 +384,19 @@ function Analytics() {
                             </div>
 
                             <div style={styles.statContent}>
-
                                 <span style={styles.statLabel}>
-                                    Total Volume
+                                    Weight Volume
                                 </span>
 
                                 <strong style={styles.statValue}>
-                                    {formatNumber(totalVolume)}
+                                    {formatNumber(
+                                        totalVolume
+                                    )}{" "}
+                                    kg
                                 </strong>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </section>
 
                 {/* =================================================
@@ -404,11 +404,8 @@ function Analytics() {
                 ================================================= */}
 
                 <section style={styles.prSection}>
-
                     <div style={styles.sectionHeader}>
-
                         <div>
-
                             <h2 style={styles.sectionTitle}>
                                 Personal Records
                             </h2>
@@ -416,15 +413,11 @@ function Analytics() {
                             <p style={styles.sectionSubtitle}>
                                 Your recorded best performances
                             </p>
-
                         </div>
-
                     </div>
 
                     {prs.length === 0 ? (
-
                         <div style={styles.emptyCard}>
-
                             <div style={styles.emptyIcon}>
                                 🏆
                             </div>
@@ -443,20 +436,17 @@ function Analytics() {
                                 type="button"
                                 style={styles.primaryButton}
                                 onClick={() =>
-                                    navigate("/workout-plans")
+                                    navigate(
+                                        "/workout-plans"
+                                    )
                                 }
                             >
                                 Start a Workout
                             </button>
-
                         </div>
-
                     ) : (
-
                         <div style={styles.prGrid}>
-
                             {prs.map((pr, index) => {
-
                                 const exerciseName =
                                     getText(
                                         pr.exerciseName,
@@ -469,15 +459,19 @@ function Analytics() {
                                         pr.category
                                     );
 
+                                const trackingType =
+                                    getTrackingType(pr);
+
                                 const weight =
                                     getNumber(
-                                        pr.weight,
                                         pr.maxWeight,
+                                        pr.weight,
                                         pr.bestWeight
                                     );
 
                                 const reps =
                                     getNumber(
+                                        pr.maxRepsAtMaxWeight,
                                         pr.reps,
                                         pr.maxReps,
                                         pr.bestReps
@@ -489,8 +483,14 @@ function Analytics() {
                                         pr.maxVolume
                                     );
 
-                                return (
+                                const duration =
+                                    getNumber(
+                                        pr.bestDurationSeconds,
+                                        pr.durationSeconds,
+                                        pr.duration
+                                    );
 
+                                return (
                                     <div
                                         key={
                                             pr.exerciseId ||
@@ -500,8 +500,9 @@ function Analytics() {
                                         style={styles.prCard}
                                     >
 
-                                        <div style={styles.prTop}>
+                                        {/* PR HEADER */}
 
+                                        <div style={styles.prTop}>
                                             <div
                                                 style={
                                                     styles.prIcon
@@ -515,9 +516,9 @@ function Analytics() {
                                                     styles.prNumber
                                                 }
                                             >
-                                                PR #{index + 1}
+                                                PR #
+                                                {index + 1}
                                             </span>
-
                                         </div>
 
                                         <h3
@@ -528,86 +529,143 @@ function Analytics() {
                                             {exerciseName}
                                         </h3>
 
-                                        <span
-                                            style={
-                                                styles.categoryBadge
-                                            }
-                                        >
-                                            {category}
-                                        </span>
-
                                         <div
                                             style={
-                                                styles.prStats
+                                                styles.badgeRow
                                             }
                                         >
-
-                                            <div
+                                            <span
                                                 style={
-                                                    styles.prStat
+                                                    styles.categoryBadge
                                                 }
                                             >
+                                                {category}
+                                            </span>
 
-                                                <strong>
-                                                    {formatNumber(
-                                                        weight
-                                                    )}
-                                                </strong>
-
-                                                <span>
-                                                    kg
-                                                </span>
-
-                                            </div>
-
-                                            <div
+                                            <span
                                                 style={
-                                                    styles.prStat
+                                                    trackingType ===
+                                                    "TIME"
+                                                        ? styles.timeBadge
+                                                        : styles.repsBadge
                                                 }
                                             >
-
-                                                <strong>
-                                                    {formatNumber(
-                                                        reps
-                                                    )}
-                                                </strong>
-
-                                                <span>
-                                                    reps
-                                                </span>
-
-                                            </div>
-
-                                            <div
-                                                style={
-                                                    styles.prStat
-                                                }
-                                            >
-
-                                                <strong>
-                                                    {formatNumber(
-                                                        volume
-                                                    )}
-                                                </strong>
-
-                                                <span>
-                                                    volume
-                                                </span>
-
-                                            </div>
-
+                                                {trackingType}
+                                            </span>
                                         </div>
 
+                                        {/* TIME PR */}
+
+                                        {trackingType ===
+                                        "TIME" ? (
+                                            <div
+                                                style={
+                                                    styles.timePrBox
+                                                }
+                                            >
+                                                <span
+                                                    style={
+                                                        styles.timePrIcon
+                                                    }
+                                                >
+                                                    ⏱️
+                                                </span>
+
+                                                <div>
+                                                    <strong
+                                                        style={
+                                                            styles.timePrValue
+                                                        }
+                                                    >
+                                                        {formatDuration(
+                                                            duration
+                                                        )}
+                                                    </strong>
+
+                                                    <span
+                                                        style={
+                                                            styles.timePrLabel
+                                                        }
+                                                    >
+                                                        Best Duration
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* REPS PR */
+
+                                            <div
+                                                style={
+                                                    styles.prStats
+                                                }
+                                            >
+                                                <div
+                                                    style={
+                                                        styles.prStat
+                                                    }
+                                                >
+                                                    <strong>
+                                                        {formatNumber(
+                                                            weight
+                                                        )}
+                                                    </strong>
+
+                                                    <span>
+                                                        kg
+                                                    </span>
+                                                </div>
+
+                                                <div
+                                                    style={
+                                                        styles.prStat
+                                                    }
+                                                >
+                                                    <strong>
+                                                        {formatNumber(
+                                                            reps
+                                                        )}
+                                                    </strong>
+
+                                                    <span>
+                                                        reps
+                                                    </span>
+                                                </div>
+
+                                                <div
+                                                    style={
+                                                        styles.prStat
+                                                    }
+                                                >
+                                                    <strong>
+                                                        {formatNumber(
+                                                            volume
+                                                        )}
+                                                    </strong>
+
+                                                    <span>
+                                                        volume
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {pr.achievedDate && (
+                                            <div
+                                                style={
+                                                    styles.achievedDate
+                                                }
+                                            >
+                                                Achieved{" "}
+                                                {
+                                                    pr.achievedDate
+                                                }
+                                            </div>
+                                        )}
                                     </div>
-
                                 );
-
                             })}
-
                         </div>
-
                     )}
-
                 </section>
 
                 {/* =================================================
@@ -615,32 +673,27 @@ function Analytics() {
                 ================================================= */}
 
                 <div style={styles.infoCard}>
-
                     <div style={styles.infoIcon}>
                         ℹ️
                     </div>
 
                     <div>
-
                         <strong style={styles.infoTitle}>
-                            How volume is calculated
+                            How your analytics work
                         </strong>
 
                         <p style={styles.infoText}>
-                            For recorded weight-training sets,
-                            volume is calculated as weight × reps.
-                            Bodyweight sets with zero external
-                            weight can therefore have zero volume.
+                            REPS exercises use weight × reps
+                            for training volume and personal
+                            records. TIME exercises use their
+                            longest recorded duration as the
+                            personal record. TIME sets are not
+                            included in weight volume.
                         </p>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     );
 }
 
@@ -649,7 +702,6 @@ function Analytics() {
 // =====================================================
 
 const styles = {
-
     page: {
         minHeight: "100vh",
         background:
@@ -665,10 +717,6 @@ const styles = {
         maxWidth: "1200px",
         margin: "0 auto"
     },
-
-    // =================================================
-    // HEADER
-    // =================================================
 
     header: {
         display: "flex",
@@ -705,10 +753,6 @@ const styles = {
         maxWidth: "650px"
     },
 
-    // =================================================
-    // BUTTONS
-    // =================================================
-
     primaryButton: {
         border:
             "1px solid var(--wt-border)",
@@ -735,10 +779,6 @@ const styles = {
         fontWeight: "700"
     },
 
-    // =================================================
-    // SECTIONS
-    // =================================================
-
     sectionHeader: {
         marginBottom: "18px"
     },
@@ -757,10 +797,6 @@ const styles = {
             "var(--wt-text-secondary)",
         fontSize: "14px"
     },
-
-    // =================================================
-    // SUMMARY
-    // =================================================
 
     summaryGrid: {
         display: "grid",
@@ -813,10 +849,6 @@ const styles = {
         fontSize: "27px",
         fontWeight: "800"
     },
-
-    // =================================================
-    // PR
-    // =================================================
 
     prSection: {
         marginTop: "45px"
@@ -875,6 +907,13 @@ const styles = {
         fontWeight: "800"
     },
 
+    badgeRow: {
+        display: "flex",
+        alignItems: "center",
+        gap: "7px",
+        flexWrap: "wrap"
+    },
+
     categoryBadge: {
         display: "inline-block",
         backgroundColor:
@@ -887,6 +926,30 @@ const styles = {
         padding: "6px 10px",
         fontSize: "12px",
         fontWeight: "700"
+    },
+
+    repsBadge: {
+        display: "inline-block",
+        backgroundColor:
+            "rgba(34, 197, 94, 0.12)",
+        color:
+            "var(--wt-success, #15803d)",
+        borderRadius: "20px",
+        padding: "6px 10px",
+        fontSize: "11px",
+        fontWeight: "800"
+    },
+
+    timeBadge: {
+        display: "inline-block",
+        backgroundColor:
+            "rgba(37, 99, 235, 0.12)",
+        color:
+            "var(--wt-accent)",
+        borderRadius: "20px",
+        padding: "6px 10px",
+        fontSize: "11px",
+        fontWeight: "800"
     },
 
     prStats: {
@@ -905,12 +968,50 @@ const styles = {
         textAlign: "center",
         display: "flex",
         flexDirection: "column",
-        gap: "3px"
+        gap: "3px",
+        color:
+            "var(--wt-text-primary)"
     },
 
-    // =================================================
-    // EMPTY
-    // =================================================
+    timePrBox: {
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+        marginTop: "20px",
+        padding: "18px",
+        borderRadius: "14px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        border:
+            "1px solid var(--wt-border)"
+    },
+
+    timePrIcon: {
+        fontSize: "28px"
+    },
+
+    timePrValue: {
+        display: "block",
+        color:
+            "var(--wt-text-primary)",
+        fontSize: "25px",
+        fontWeight: "800"
+    },
+
+    timePrLabel: {
+        display: "block",
+        marginTop: "3px",
+        color:
+            "var(--wt-text-secondary)",
+        fontSize: "12px"
+    },
+
+    achievedDate: {
+        marginTop: "15px",
+        color:
+            "var(--wt-text-muted)",
+        fontSize: "12px"
+    },
 
     emptyCard: {
         backgroundColor:
@@ -943,10 +1044,6 @@ const styles = {
         lineHeight: "1.6"
     },
 
-    // =================================================
-    // INFO
-    // =================================================
-
     infoCard: {
         display: "flex",
         gap: "14px",
@@ -976,10 +1073,6 @@ const styles = {
         fontSize: "13px",
         lineHeight: "1.6"
     },
-
-    // =================================================
-    // CENTER
-    // =================================================
 
     center: {
         minHeight: "70vh",

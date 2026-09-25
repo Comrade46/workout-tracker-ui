@@ -2,6 +2,29 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../api/axiosConfig";
 import "./Exercises.css";
 
+const EMPTY_FORM = {
+    name: "",
+    category: "Chest",
+    workoutType: "HOME",
+    equipment: "No Equipment",
+    trackingType: "REPS",
+    defaultReps: 12,
+    durationSeconds: 30,
+    restSeconds: 15
+};
+
+const NUMBER_FIELDS = [
+    "defaultReps",
+    "durationSeconds",
+    "restSeconds"
+];
+
+function workoutTypeLabel(type) {
+    if (type === "GYM") return "🏋️ Gym";
+    if (type === "BOTH") return "🏠🏋️ Home & Gym";
+    return "🏠 Home";
+}
+
 function Exercises() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,14 +37,11 @@ function Exercises() {
     const [showAddForm, setShowAddForm] = useState(false);
     const [saving, setSaving] = useState(false);
 
-    const [form, setForm] = useState({
-        name: "",
-        category: "Chest",
-        workoutType: "HOME",
-        equipment: "No Equipment",
-        durationSeconds: 30,
-        restSeconds: 15
-    });
+    // Exercise being edited, or null when adding a new one
+    const [editingExercise, setEditingExercise] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
+
+    const [form, setForm] = useState(EMPTY_FORM);
 
     useEffect(() => {
         loadExercises();
@@ -120,25 +140,86 @@ function Exercises() {
         setForm((previous) => ({
             ...previous,
             [name]:
-                name === "durationSeconds" ||
-                name === "restSeconds"
+                NUMBER_FIELDS.includes(name)
                     ? Number(value)
                     : value
         }));
     };
 
     const resetForm = () => {
+        setForm(EMPTY_FORM);
+        setEditingExercise(null);
+    };
+
+    const closeForm = () => {
+        resetForm();
+        setShowAddForm(false);
+    };
+
+    const startEdit = (exercise) => {
+        setEditingExercise(exercise);
+
         setForm({
-            name: "",
-            category: "Chest",
-            workoutType: "HOME",
-            equipment: "No Equipment",
-            durationSeconds: 30,
-            restSeconds: 15
+            name: exercise.name || "",
+            category: exercise.category || "Chest",
+            workoutType: exercise.workoutType || "HOME",
+            equipment: exercise.equipment || "No Equipment",
+            trackingType: exercise.trackingType || "REPS",
+            defaultReps: exercise.defaultReps ?? 12,
+            durationSeconds: exercise.durationSeconds ?? 30,
+            restSeconds: exercise.restSeconds ?? 15
+        });
+
+        setShowAddForm(true);
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
         });
     };
 
-    const addExercise = async (event) => {
+    const deleteExercise = async (exercise) => {
+        const confirmed = window.confirm(
+            `Delete "${exercise.name}"?\n\nIt will also be removed from any workout plans that use it. This cannot be undone.`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setDeletingId(exercise.id);
+
+            await api.delete(
+                `/exercises/${exercise.id}`
+            );
+
+            setExercises((previous) =>
+                previous.filter(
+                    (item) => item.id !== exercise.id
+                )
+            );
+
+            if (editingExercise?.id === exercise.id) {
+                closeForm();
+            }
+        } catch (requestError) {
+            console.error(
+                "Error deleting exercise:",
+                requestError
+            );
+
+            alert(
+                requestError.response?.data?.message ||
+                requestError.userMessage ||
+                "Unable to delete exercise."
+            );
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
+    const saveExercise = async (event) => {
         event.preventDefault();
 
         if (!form.name.trim()) {
@@ -148,9 +229,19 @@ function Exercises() {
             return;
         }
 
-        if (form.durationSeconds < 1) {
+        const isTime =
+            form.trackingType === "TIME";
+
+        if (isTime && form.durationSeconds < 1) {
             alert(
                 "Duration must be at least 1 second."
+            );
+            return;
+        }
+
+        if (!isTime && form.defaultReps < 1) {
+            alert(
+                "Reps must be at least 1."
             );
             return;
         }
@@ -165,36 +256,61 @@ function Exercises() {
         try {
             setSaving(true);
 
-            const newExercise = {
+            const payload = {
                 name: form.name.trim(),
                 category: form.category,
                 workoutType: form.workoutType,
                 equipment:
                     form.equipment.trim() ||
                     "No Equipment",
-                isCustom: true,
-                durationSeconds:
-                    form.durationSeconds,
+                trackingType:
+                    form.trackingType,
+                defaultReps: isTime
+                    ? null
+                    : form.defaultReps,
+                durationSeconds: isTime
+                    ? form.durationSeconds
+                    : null,
                 restSeconds:
                     form.restSeconds
             };
 
-            const response =
-                await api.post(
-                    "/exercises",
-                    newExercise
+            if (editingExercise) {
+                const response =
+                    await api.put(
+                        `/exercises/${editingExercise.id}`,
+                        payload
+                    );
+
+                setExercises((previous) =>
+                    previous.map((item) =>
+                        item.id === editingExercise.id
+                            ? response.data
+                            : item
+                    )
                 );
+            } else {
+                const response =
+                    await api.post(
+                        "/exercises",
+                        payload
+                    );
 
-            setExercises((previous) => [
-                response.data,
-                ...previous
-            ]);
+                setExercises((previous) => [
+                    response.data,
+                    ...previous
+                ]);
+            }
 
-            resetForm();
-            setShowAddForm(false);
+            const wasEditing =
+                Boolean(editingExercise);
+
+            closeForm();
 
             alert(
-                "Exercise added successfully!"
+                wasEditing
+                    ? "Exercise updated successfully!"
+                    : "Exercise added successfully!"
             );
         } catch (requestError) {
             console.error(
@@ -202,17 +318,15 @@ function Exercises() {
                 requestError
             );
 
-            if (
-                requestError.response?.data?.message
-            ) {
-                alert(
-                    requestError.response.data.message
-                );
-            } else {
-                alert(
-                    "Unable to add exercise."
-                );
-            }
+            const validationErrors =
+                requestError.response?.data?.validationErrors;
+
+            alert(
+                (validationErrors &&
+                    Object.values(validationErrors).join("\n")) ||
+                requestError.response?.data?.message ||
+                "Unable to save exercise."
+            );
         } finally {
             setSaving(false);
         }
@@ -290,12 +404,14 @@ function Exercises() {
                     <button
                         type="button"
                         style={styles.addButton}
-                        onClick={() =>
-                            setShowAddForm(
-                                (previous) =>
-                                    !previous
-                            )
-                        }
+                        onClick={() => {
+                            if (showAddForm) {
+                                closeForm();
+                            } else {
+                                resetForm();
+                                setShowAddForm(true);
+                            }
+                        }}
                     >
                         {showAddForm
                             ? "✕ Close"
@@ -319,7 +435,9 @@ function Exercises() {
                                         styles.formTitle
                                     }
                                 >
-                                    Create Your Exercise
+                                    {editingExercise
+                                        ? `Edit "${editingExercise.name}"`
+                                        : "Create Your Exercise"}
                                 </h2>
 
                                 <p
@@ -327,9 +445,9 @@ function Exercises() {
                                         styles.formSubtitle
                                     }
                                 >
-                                    Add your own exercise
-                                    with custom workout
-                                    and rest time.
+                                    {editingExercise
+                                        ? "Update how this exercise is tracked and its defaults."
+                                        : "Add your own exercise with reps or time and rest."}
                                 </p>
                             </div>
 
@@ -338,12 +456,14 @@ function Exercises() {
                                     styles.customBadge
                                 }
                             >
-                                ⭐ CUSTOM
+                                {editingExercise
+                                    ? "✏️ EDIT"
+                                    : "⭐ CUSTOM"}
                             </span>
                         </div>
 
                         <form
-                            onSubmit={addExercise}
+                            onSubmit={saveExercise}
                         >
                             <div
                                 style={
@@ -475,6 +595,10 @@ function Exercises() {
                                         <option value="GYM">
                                             🏋️ Gym
                                         </option>
+
+                                        <option value="BOTH">
+                                            🏠🏋️ Home & Gym
+                                        </option>
                                     </select>
                                 </div>
 
@@ -509,8 +633,93 @@ function Exercises() {
                                     />
                                 </div>
 
+                                {/* TRACKING TYPE */}
+
+                                <div
+                                    style={
+                                        styles.field
+                                    }
+                                >
+                                    <label
+                                        style={
+                                            styles.label
+                                        }
+                                    >
+                                        Tracked By
+                                    </label>
+
+                                    <select
+                                        name="trackingType"
+                                        value={
+                                            form.trackingType
+                                        }
+                                        onChange={
+                                            handleFormChange
+                                        }
+                                        style={
+                                            styles.select
+                                        }
+                                    >
+                                        <option value="REPS">
+                                            🔁 Repetitions (e.g. Push-Ups)
+                                        </option>
+
+                                        <option value="TIME">
+                                            ⏱️ Time (e.g. Plank)
+                                        </option>
+                                    </select>
+                                </div>
+
+                                {/* REPS */}
+
+                                {form.trackingType !== "TIME" && (
+                                <div
+                                    style={
+                                        styles.field
+                                    }
+                                >
+                                    <label
+                                        style={
+                                            styles.label
+                                        }
+                                    >
+                                        Default Reps
+                                    </label>
+
+                                    <div
+                                        style={
+                                            styles.inputWithUnit
+                                        }
+                                    >
+                                        <input
+                                            type="number"
+                                            name="defaultReps"
+                                            min="1"
+                                            value={
+                                                form.defaultReps
+                                            }
+                                            onChange={
+                                                handleFormChange
+                                            }
+                                            style={
+                                                styles.numberInput
+                                            }
+                                        />
+
+                                        <span
+                                            style={
+                                                styles.unit
+                                            }
+                                        >
+                                            reps
+                                        </span>
+                                    </div>
+                                </div>
+                                )}
+
                                 {/* DURATION */}
 
+                                {form.trackingType === "TIME" && (
                                 <div
                                     style={
                                         styles.field
@@ -553,6 +762,7 @@ function Exercises() {
                                         </span>
                                     </div>
                                 </div>
+                                )}
 
                                 {/* REST */}
 
@@ -613,10 +823,7 @@ function Exercises() {
                                     onClick={() => {
                                         if (saving) return;
 
-                                        resetForm();
-                                        setShowAddForm(
-                                            false
-                                        );
+                                        closeForm();
                                     }}
                                     disabled={saving}
                                 >
@@ -632,6 +839,8 @@ function Exercises() {
                                 >
                                     {saving
                                         ? "Saving..."
+                                        : editingExercise
+                                        ? "✓ Save Changes"
                                         : "＋ Create Exercise"}
                                 </button>
                             </div>
@@ -755,6 +964,10 @@ function Exercises() {
                                 <option value="GYM">
                                     🏋️ Gym
                                 </option>
+
+                                <option value="BOTH">
+                                    🏠🏋️ Home & Gym
+                                </option>
                             </select>
                         </div>
 
@@ -841,9 +1054,17 @@ function Exercises() {
                     <div style={styles.grid}>
                         {filteredExercises.map(
                             (exercise) => {
+                                const isTime =
+                                    exercise.trackingType ===
+                                    "TIME";
+
                                 const duration =
                                     exercise.durationSeconds ??
                                     30;
+
+                                const reps =
+                                    exercise.defaultReps ??
+                                    12;
 
                                 const rest =
                                     exercise.restSeconds ??
@@ -939,10 +1160,9 @@ function Exercises() {
                                                     styles.typeBadge
                                                 }
                                             >
-                                                {type ===
-                                                "GYM"
-                                                    ? "🏋️ Gym"
-                                                    : "🏠 Home"}
+                                                {workoutTypeLabel(
+                                                    type
+                                                )}
                                             </span>
                                         </div>
 
@@ -982,7 +1202,9 @@ function Exercises() {
                                                         styles.timeIcon
                                                     }
                                                 >
-                                                    ⏱️
+                                                    {isTime
+                                                        ? "⏱️"
+                                                        : "🔁"}
                                                 </span>
 
                                                 <div
@@ -995,10 +1217,9 @@ function Exercises() {
                                                             styles.timeValue
                                                         }
                                                     >
-                                                        {
-                                                            duration
-                                                        }
-                                                        s
+                                                        {isTime
+                                                            ? `${duration}s`
+                                                            : `${reps} reps`}
                                                     </strong>
 
                                                     <small
@@ -1006,7 +1227,9 @@ function Exercises() {
                                                             styles.timeLabel
                                                         }
                                                     >
-                                                        Duration
+                                                        {isTime
+                                                            ? "Duration"
+                                                            : "Reps / set"}
                                                     </small>
                                                 </div>
                                             </div>
@@ -1048,6 +1271,57 @@ function Exercises() {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {exercise.editable ? (
+                                        <div
+                                            style={
+                                                styles.cardActions
+                                            }
+                                        >
+                                            <button
+                                                type="button"
+                                                style={
+                                                    styles.editButton
+                                                }
+                                                onClick={() =>
+                                                    startEdit(
+                                                        exercise
+                                                    )
+                                                }
+                                            >
+                                                ✏️ Edit
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                style={
+                                                    styles.deleteButton
+                                                }
+                                                disabled={
+                                                    deletingId ===
+                                                    exercise.id
+                                                }
+                                                onClick={() =>
+                                                    deleteExercise(
+                                                        exercise
+                                                    )
+                                                }
+                                            >
+                                                {deletingId ===
+                                                exercise.id
+                                                    ? "Deleting..."
+                                                    : "🗑️ Delete"}
+                                            </button>
+                                        </div>
+                                        ) : (
+                                        <div
+                                            style={
+                                                styles.readOnlyNote
+                                            }
+                                        >
+                                            🔒 Built-in exercise
+                                        </div>
+                                        )}
                                     </div>
                                 );
                             }
@@ -1348,6 +1622,49 @@ const styles = {
 
     timeLabel: {
         color: "var(--wt-text-muted)"
+    },
+
+    cardActions: {
+        display: "grid",
+        gridTemplateColumns:
+            "1fr 1fr",
+        gap: "10px",
+        marginTop: "14px"
+    },
+
+    readOnlyNote: {
+        marginTop: "14px",
+        padding: "10px",
+        textAlign: "center",
+        fontSize: "12px",
+        fontWeight: "600",
+        color: "var(--wt-text-muted)"
+    },
+
+    editButton: {
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "10px",
+        padding: "10px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-primary)",
+        fontWeight: "700",
+        cursor: "pointer"
+    },
+
+    deleteButton: {
+        border:
+            "1px solid var(--wt-danger)",
+        borderRadius: "10px",
+        padding: "10px",
+        backgroundColor:
+            "transparent",
+        color:
+            "var(--wt-danger)",
+        fontWeight: "700",
+        cursor: "pointer"
     },
 
     emptyCard: {

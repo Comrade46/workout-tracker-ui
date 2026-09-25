@@ -47,36 +47,66 @@ function getEquipment(exercise) {
     );
 }
 
-function getDuration(exercise) {
-    return Math.max(
-        1,
-        Number(
-            exercise?.durationSeconds ??
-                exercise?.duration ??
-                exercise?.exercise?.durationSeconds ??
-                30
-        ) || 30
+function getTrackingType(exercise) {
+    const value =
+        exercise?.trackingType ??
+        exercise?.tracking_type ??
+        exercise?.exercise?.trackingType ??
+        "TIME";
+
+    return String(value).toUpperCase() === "REPS"
+        ? "REPS"
+        : "TIME";
+}
+
+function getTargetValue(exercise) {
+    const value = Number(
+        exercise?.targetValue ??
+        exercise?.target_value ??
+        exercise?.durationSeconds ??
+        exercise?.duration ??
+        30
     );
+
+    return Math.max(1, Number.isFinite(value) ? value : 30);
+}
+
+function getTargetSets(exercise) {
+    const value = Number(
+        exercise?.targetSets ??
+        exercise?.target_sets ??
+        1
+    );
+
+    return Math.max(1, Number.isFinite(value) ? value : 1);
+}
+
+function getDuration(exercise) {
+    return getTrackingType(exercise) === "TIME"
+        ? getTargetValue(exercise)
+        : 0;
 }
 
 function getRest(exercise) {
+    const value = Number(
+        exercise?.restSeconds ??
+        exercise?.rest ??
+        exercise?.exercise?.restSeconds ??
+        15
+    );
+
     return Math.max(
         0,
-        Number(
-            exercise?.restSeconds ??
-                exercise?.rest ??
-                exercise?.exercise?.restSeconds ??
-                15
-        ) || 0
+        Number.isFinite(value) ? value : 15
     );
 }
 
 function getExerciseOrder(exercise) {
     return Number(
         exercise?.exerciseOrder ??
-            exercise?.order ??
-            exercise?.exercise?.exerciseOrder ??
-            0
+        exercise?.order ??
+        exercise?.exercise?.exerciseOrder ??
+        0
     );
 }
 
@@ -89,11 +119,15 @@ function WorkoutPlayer() {
     const [loadError, setLoadError] = useState("");
 
     const [currentIndex, setCurrentIndex] = useState(0);
+
     const [mode, setMode] = useState("exercise");
+
     const [timeLeft, setTimeLeft] = useState(0);
+
     const [isRunning, setIsRunning] = useState(false);
 
     const [exerciseSets, setExerciseSets] = useState({});
+
     const [setForm, setSetForm] = useState({
         reps: "",
         weight: "0",
@@ -101,19 +135,43 @@ function WorkoutPlayer() {
     });
 
     const [setError, setSetError] = useState("");
+
     const [saveError, setSaveError] = useState("");
+
     const [completed, setCompleted] = useState(false);
+
     const [saving, setSaving] = useState(false);
+
     const [savedSession, setSavedSession] = useState(null);
 
+    const [currentSetNumber, setCurrentSetNumber] = useState(1);
+
     const workoutStartTimeRef = useRef(null);
+
     const completionHandledRef = useRef(false);
+
     const timerRef = useRef(null);
 
-    const currentExercise = exercises[currentIndex] || null;
+    const currentExercise =
+        exercises[currentIndex] || null;
 
     const currentExerciseId = useMemo(
         () => getExerciseId(currentExercise),
+        [currentExercise]
+    );
+
+    const currentTrackingType = useMemo(
+        () => getTrackingType(currentExercise),
+        [currentExercise]
+    );
+
+    const currentTargetValue = useMemo(
+        () => getTargetValue(currentExercise),
+        [currentExercise]
+    );
+
+    const currentTargetSets = useMemo(
+        () => getTargetSets(currentExercise),
         [currentExercise]
     );
 
@@ -122,12 +180,18 @@ function WorkoutPlayer() {
             return [];
         }
 
-        return exerciseSets[currentExerciseId] || [];
-    }, [exerciseSets, currentExerciseId]);
+        return (
+            exerciseSets[currentExerciseId] || []
+        );
+    }, [
+        exerciseSets,
+        currentExerciseId
+    ]);
 
     const totalSets = useMemo(() => {
         return Object.values(exerciseSets).reduce(
-            (total, sets) => total + sets.length,
+            (total, sets) =>
+                total + sets.length,
             0
         );
     }, [exerciseSets]);
@@ -137,7 +201,21 @@ function WorkoutPlayer() {
             .flat()
             .reduce(
                 (total, set) =>
-                    total + Number(set.volume || 0),
+                    total +
+                    Number(set.volume || 0),
+                0
+            );
+    }, [exerciseSets]);
+
+    const totalDuration = useMemo(() => {
+        return Object.values(exerciseSets)
+            .flat()
+            .reduce(
+                (total, set) =>
+                    total +
+                    Number(
+                        set.durationSeconds || 0
+                    ),
                 0
             );
     }, [exerciseSets]);
@@ -145,170 +223,381 @@ function WorkoutPlayer() {
     const progressPercentage =
         exercises.length === 0
             ? 0
-            : ((currentIndex + 1) / exercises.length) * 100;
+            : ((currentIndex + 1) /
+                  exercises.length) *
+              100;
 
     // =====================================================
-    // LOAD EXERCISES
+    // LOAD WORKOUT
     // =====================================================
 
-    const loadExercises = useCallback(async () => {
-        try {
-            setLoading(true);
-            setLoadError("");
-            setSaveError("");
+    const loadExercises =
+        useCallback(async () => {
+            try {
+                setLoading(true);
+                setLoadError("");
+                setSaveError("");
 
-            if (!planId) {
-                setLoadError(
-                    "Workout plan ID is missing."
+                if (!planId) {
+                    setLoadError(
+                        "Workout plan ID is missing."
+                    );
+                    return;
+                }
+
+                const response =
+                    await api.get(
+                        `/workout-plan-exercises/workout-plans/${planId}/exercises`
+                    );
+
+                const responseData =
+                    Array.isArray(response.data)
+                        ? response.data
+                        : [];
+
+                const sortedExercises =
+                    [...responseData].sort(
+                        (a, b) =>
+                            getExerciseOrder(a) -
+                            getExerciseOrder(b)
+                    );
+
+                if (
+                    sortedExercises.length === 0
+                ) {
+                    setLoadError(
+                        "This workout plan does not contain any exercises."
+                    );
+                    return;
+                }
+
+                setExercises(
+                    sortedExercises
                 );
-                return;
+
+                const firstExercise =
+                    sortedExercises[0];
+
+                setCurrentIndex(0);
+
+                setMode("exercise");
+
+                setTimeLeft(
+                    getDuration(
+                        firstExercise
+                    )
+                );
+
+                setIsRunning(false);
+
+                setExerciseSets({});
+
+                setCurrentSetNumber(1);
+
+                setSetForm({
+                    reps: "",
+                    weight: "0",
+                    rpe: ""
+                });
+
+                setCompleted(false);
+
+                setSavedSession(null);
+
+                completionHandledRef.current =
+                    false;
+
+                workoutStartTimeRef.current =
+                    null;
+            } catch (requestError) {
+                console.error(
+                    "Error loading workout exercises:",
+                    requestError
+                );
+
+                if (
+                    requestError.response
+                        ?.status === 401
+                ) {
+                    setLoadError(
+                        "Your session has expired. Please login again."
+                    );
+                } else {
+                    const backendMessage =
+                        requestError.response
+                            ?.data?.message ||
+                        requestError.response
+                            ?.data?.error;
+
+                    setLoadError(
+                        backendMessage ||
+                            "Unable to load workout exercises."
+                    );
+                }
+            } finally {
+                setLoading(false);
             }
-
-            const response = await api.get(
-                `/workout-plan-exercises/workout-plans/${planId}/exercises`
-            );
-
-            const data = Array.isArray(response.data)
-                ? response.data
-                : [];
-
-            const sortedExercises = [...data].sort(
-                (a, b) =>
-                    getExerciseOrder(a) -
-                    getExerciseOrder(b)
-            );
-
-            if (sortedExercises.length === 0) {
-                setLoadError(
-                    "This workout plan does not contain any exercises."
-                );
-                return;
-            }
-
-            setExercises(sortedExercises);
-
-            const firstExercise =
-                sortedExercises[0];
-
-            setTimeLeft(
-                getDuration(firstExercise)
-            );
-
-            setMode("exercise");
-            setCurrentIndex(0);
-            setIsRunning(false);
-            setCompleted(false);
-            setSavedSession(null);
-
-            completionHandledRef.current = false;
-            workoutStartTimeRef.current = null;
-        } catch (requestError) {
-            console.error(
-                "Error loading workout exercises:",
-                requestError
-            );
-
-            if (
-                requestError.response?.status === 401
-            ) {
-                setLoadError(
-                    "Your session has expired. Please login again."
-                );
-            } else {
-                const backendMessage =
-                    requestError.response?.data?.message ||
-                    requestError.response?.data?.error;
-
-                setLoadError(
-                    backendMessage ||
-                        "Unable to load workout exercises."
-                );
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, [planId]);
+        }, [planId]);
 
     useEffect(() => {
         loadExercises();
 
         return () => {
             if (timerRef.current) {
-                clearInterval(timerRef.current);
+                clearInterval(
+                    timerRef.current
+                );
             }
         };
     }, [loadExercises]);
 
     // =====================================================
-    // WORKOUT CONTROLS
+    // ADD TIME SET
+    // =====================================================
+
+    const addTimeSet =
+        useCallback(() => {
+            if (!currentExerciseId) {
+                return;
+            }
+
+            const targetDuration =
+                currentTargetValue;
+
+            const newSet = {
+                exerciseId:
+                    currentExerciseId,
+
+                exerciseName:
+                    getExerciseName(
+                        currentExercise
+                    ),
+
+                category:
+                    getCategory(
+                        currentExercise
+                    ),
+
+                setNumber:
+                    currentSetNumber,
+
+                weight: 0,
+
+                reps: 0,
+
+                rpe: null,
+
+                durationSeconds:
+                    targetDuration,
+
+                volume: 0
+            };
+
+            setExerciseSets(
+                previous => ({
+                    ...previous,
+
+                    [currentExerciseId]: [
+                        ...(previous[
+                            currentExerciseId
+                        ] || []),
+                        newSet
+                    ]
+                })
+            );
+
+            return newSet;
+        }, [
+            currentExercise,
+            currentExerciseId,
+            currentSetNumber,
+            currentTargetValue
+        ]);
+
+    // =====================================================
+    // COMPLETE CURRENT TIME SET
+    // =====================================================
+
+    const completeTimeSet =
+        useCallback(() => {
+            if (
+                !currentExercise ||
+                !currentExerciseId
+            ) {
+                return;
+            }
+
+            addTimeSet();
+
+            const completedSetsCount =
+                currentExerciseSets.length +
+                1;
+
+            setIsRunning(false);
+
+            if (
+                completedSetsCount >=
+                currentTargetSets
+            ) {
+                const restSeconds =
+                    getRest(
+                        currentExercise
+                    );
+
+                if (restSeconds > 0) {
+                    setMode("rest");
+                    setTimeLeft(
+                        restSeconds
+                    );
+                    setIsRunning(true);
+                } else {
+                    if (
+                        currentIndex >=
+                        exercises.length - 1
+                    ) {
+                        setMode(
+                            "completed"
+                        );
+                        setCompleted(
+                            true
+                        );
+                    } else {
+                        setTimeout(() => {
+                            moveToNextExercise();
+                        }, 0);
+                    }
+                }
+
+                return;
+            }
+
+            setCurrentSetNumber(
+                completedSetsCount + 1
+            );
+
+            setTimeLeft(
+                currentTargetValue
+            );
+
+            setMode("exercise");
+
+            setIsRunning(true);
+        }, [
+            currentExercise,
+            currentExerciseId,
+            addTimeSet,
+            currentExerciseSets.length,
+            currentTargetSets,
+            currentIndex,
+            exercises.length,
+            currentTargetValue
+        ]);
+
+    // =====================================================
+    // MOVE TO NEXT EXERCISE
+    // =====================================================
+
+    const moveToNextExercise =
+        useCallback(() => {
+            if (
+                currentIndex >=
+                exercises.length - 1
+            ) {
+                setIsRunning(false);
+                setMode("completed");
+                setCompleted(true);
+                return;
+            }
+
+            const nextIndex =
+                currentIndex + 1;
+
+            const nextExercise =
+                exercises[nextIndex];
+
+            setCurrentIndex(
+                nextIndex
+            );
+
+            setMode("exercise");
+
+            setCurrentSetNumber(1);
+
+            setTimeLeft(
+                getDuration(
+                    nextExercise
+                )
+            );
+
+            setIsRunning(false);
+
+            setSetError("");
+
+            setSetForm({
+                reps: "",
+                weight: "0",
+                rpe: ""
+            });
+        }, [
+            currentIndex,
+            exercises
+        ]);
+
+    // =====================================================
+    // START REST
+    // =====================================================
+
+    const startRest =
+        useCallback(() => {
+            if (!currentExercise) {
+                return;
+            }
+
+            const restSeconds =
+                getRest(
+                    currentExercise
+                );
+
+            if (restSeconds <= 0) {
+                moveToNextExercise();
+                return;
+            }
+
+            setMode("rest");
+
+            setTimeLeft(
+                restSeconds
+            );
+
+            setIsRunning(true);
+        }, [
+            currentExercise,
+            moveToNextExercise
+        ]);
+
+    // =====================================================
+    // START WORKOUT
     // =====================================================
 
     const startWorkout = () => {
-        if (!workoutStartTimeRef.current) {
+        if (
+            !workoutStartTimeRef.current
+        ) {
             workoutStartTimeRef.current =
                 Date.now();
         }
 
         setIsRunning(true);
+        setMode("exercise");
     };
+
+    // =====================================================
+    // PAUSE WORKOUT
+    // =====================================================
 
     const pauseWorkout = () => {
         setIsRunning(false);
     };
-
-    const moveToNextExercise = useCallback(() => {
-        if (
-            currentIndex >=
-            exercises.length - 1
-        ) {
-            setIsRunning(false);
-            setMode("completed");
-            setCompleted(true);
-            return;
-        }
-
-        const nextIndex =
-            currentIndex + 1;
-
-        const nextExercise =
-            exercises[nextIndex];
-
-        setCurrentIndex(nextIndex);
-        setMode("exercise");
-        setTimeLeft(
-            getDuration(nextExercise)
-        );
-        setIsRunning(true);
-
-        setSetError("");
-
-        setSetForm({
-            reps: "",
-            weight: "0",
-            rpe: ""
-        });
-    }, [currentIndex, exercises]);
-
-    const startRest = useCallback(() => {
-        if (!currentExercise) {
-            return;
-        }
-
-        const restSeconds =
-            getRest(currentExercise);
-
-        if (restSeconds <= 0) {
-            moveToNextExercise();
-            return;
-        }
-
-        setMode("rest");
-        setTimeLeft(restSeconds);
-        setIsRunning(true);
-    }, [
-        currentExercise,
-        moveToNextExercise
-    ]);
 
     // =====================================================
     // TIMER
@@ -322,49 +611,63 @@ function WorkoutPlayer() {
             return;
         }
 
+        if (
+            mode === "exercise" &&
+            currentTrackingType ===
+                "REPS"
+        ) {
+            return;
+        }
+
         timerRef.current =
             setInterval(() => {
-                setTimeLeft((previous) => {
-                    if (previous > 1) {
-                        return previous - 1;
-                    }
-
-                    clearInterval(
-                        timerRef.current
-                    );
-
-                    if (
-                        mode === "exercise"
-                    ) {
-                        const restSeconds =
-                            getRest(
-                                currentExercise
+                setTimeLeft(
+                    previous => {
+                        if (
+                            previous > 1
+                        ) {
+                            return (
+                                previous - 1
                             );
-
-                        if (restSeconds > 0) {
-                            setMode("rest");
-                            setIsRunning(true);
-
-                            return restSeconds;
                         }
 
-                        setTimeout(() => {
-                            moveToNextExercise();
-                        }, 0);
+                        clearInterval(
+                            timerRef.current
+                        );
+
+                        if (
+                            mode ===
+                                "exercise" &&
+                            currentTrackingType ===
+                                "TIME"
+                        ) {
+                            setTimeout(
+                                () => {
+                                    completeTimeSet();
+                                },
+                                0
+                            );
+
+                            return 0;
+                        }
+
+                        if (
+                            mode ===
+                            "rest"
+                        ) {
+                            setTimeout(
+                                () => {
+                                    moveToNextExercise();
+                                },
+                                0
+                            );
+
+                            return 0;
+                        }
 
                         return 0;
                     }
-
-                    if (mode === "rest") {
-                        setTimeout(() => {
-                            moveToNextExercise();
-                        }, 0);
-
-                        return 0;
-                    }
-
-                    return 0;
-                });
+                );
             }, 1000);
 
         return () => {
@@ -375,9 +678,14 @@ function WorkoutPlayer() {
     }, [
         isRunning,
         mode,
-        currentExercise,
+        currentTrackingType,
+        completeTimeSet,
         moveToNextExercise
     ]);
+
+    // =====================================================
+    // SKIP EXERCISE
+    // =====================================================
 
     const skipExercise = () => {
         if (!currentExercise) {
@@ -392,11 +700,15 @@ function WorkoutPlayer() {
         }
 
         const restSeconds =
-            getRest(currentExercise);
+            getRest(
+                currentExercise
+            );
 
         if (restSeconds > 0) {
             setMode("rest");
-            setTimeLeft(restSeconds);
+            setTimeLeft(
+                restSeconds
+            );
             setIsRunning(true);
         } else {
             moveToNextExercise();
@@ -404,10 +716,10 @@ function WorkoutPlayer() {
     };
 
     // =====================================================
-    // SET TRACKING
+    // ADD REPS SET
     // =====================================================
 
-    const addSet = () => {
+    const addRepSet = () => {
         setSetError("");
 
         const reps =
@@ -416,12 +728,16 @@ function WorkoutPlayer() {
         const weight =
             setForm.weight === ""
                 ? 0
-                : Number(setForm.weight);
+                : Number(
+                      setForm.weight
+                  );
 
         const rpe =
             setForm.rpe === ""
                 ? null
-                : Number(setForm.rpe);
+                : Number(
+                      setForm.rpe
+                  );
 
         if (
             !Number.isFinite(reps) ||
@@ -446,7 +762,9 @@ function WorkoutPlayer() {
         if (
             rpe !== null &&
             (
-                !Number.isFinite(rpe) ||
+                !Number.isFinite(
+                    rpe
+                ) ||
                 rpe < 0 ||
                 rpe > 10
             )
@@ -465,7 +783,8 @@ function WorkoutPlayer() {
         }
 
         const nextSetNumber =
-            currentExerciseSets.length + 1;
+            currentExerciseSets.length +
+            1;
 
         const newSet = {
             exerciseId:
@@ -485,15 +804,19 @@ function WorkoutPlayer() {
                 nextSetNumber,
 
             weight,
+
             reps,
+
             rpe,
+
+            durationSeconds: 0,
 
             volume:
                 weight * reps
         };
 
         setExerciseSets(
-            (previous) => ({
+            previous => ({
                 ...previous,
 
                 [currentExerciseId]: [
@@ -512,17 +835,41 @@ function WorkoutPlayer() {
         });
 
         setSetError("");
+
+        if (
+            nextSetNumber >=
+            currentTargetSets
+        ) {
+            setTimeout(() => {
+                const restSeconds =
+                    getRest(
+                        currentExercise
+                    );
+
+                if (
+                    restSeconds > 0
+                ) {
+                    setMode("rest");
+                    setTimeLeft(
+                        restSeconds
+                    );
+                    setIsRunning(true);
+                }
+            }, 0);
+        }
     };
 
-    const removeSet = (
-        setNumber
-    ) => {
+    // =====================================================
+    // REMOVE SET
+    // =====================================================
+
+    const removeSet = setNumber => {
         if (!currentExerciseId) {
             return;
         }
 
         setExerciseSets(
-            (previous) => {
+            previous => {
                 const existing =
                     previous[
                         currentExerciseId
@@ -531,7 +878,7 @@ function WorkoutPlayer() {
                 const remaining =
                     existing
                         .filter(
-                            (set) =>
+                            set =>
                                 set.setNumber !==
                                 setNumber
                         )
@@ -542,7 +889,8 @@ function WorkoutPlayer() {
                             ) => ({
                                 ...set,
                                 setNumber:
-                                    index + 1
+                                    index +
+                                    1
                             })
                         );
 
@@ -553,6 +901,13 @@ function WorkoutPlayer() {
                         remaining
                 };
             }
+        );
+
+        setCurrentSetNumber(
+            Math.max(
+                1,
+                currentExerciseSets.length
+            )
         );
     };
 
@@ -572,6 +927,7 @@ function WorkoutPlayer() {
             true;
 
         setSaving(true);
+
         setSaveError("");
 
         try {
@@ -594,49 +950,82 @@ function WorkoutPlayer() {
                     exerciseSets
                 )
                     .flat()
-                    .map((set) => ({
-                        exerciseId:
-                            set.exerciseId,
-
-                        exerciseName:
-                            set.exerciseName,
-
-                        category:
-                            set.category,
-
-                        setNumber:
-                            set.setNumber,
-
-                        weight:
+                    .map(set => {
+                        const durationSeconds =
                             Number(
-                                set.weight
-                            ) || 0,
+                                set.durationSeconds ||
+                                    0
+                            );
 
-                        reps:
+                        const reps =
                             Number(
-                                set.reps
-                            ) || 0,
+                                set.reps || 0
+                            );
 
-                        rpe:
-                            set.rpe ===
-                                null ||
-                            set.rpe === ""
-                                ? null
-                                : Number(
-                                      set.rpe
-                                  ),
-
-                        volume:
+                        const weight =
                             Number(
-                                set.volume
-                            ) || 0
-                    }));
+                                set.weight ||
+                                    0
+                            );
+
+                        return {
+                            exerciseId:
+                                set.exerciseId,
+
+                            exerciseName:
+                                set.exerciseName,
+
+                            category:
+                                set.category,
+
+                            setNumber:
+                                set.setNumber,
+
+                            weight,
+
+                            reps,
+
+                            rpe:
+                                set.rpe ===
+                                    null ||
+                                set.rpe ===
+                                    ""
+                                    ? null
+                                    : Number(
+                                          set.rpe
+                                      ),
+
+                            durationSeconds,
+
+                            volume:
+                                durationSeconds >
+                                0
+                                    ? 0
+                                    : weight *
+                                      reps
+                        };
+                    });
+
+            if (sets.length === 0) {
+                setSaveError(
+                    "No completed sets were recorded. Complete at least one exercise before finishing the workout."
+                );
+
+                completionHandledRef.current =
+                    false;
+
+                setSaving(false);
+
+                return;
+            }
 
             const payload = {
                 workoutDate:
                     new Date()
                         .toISOString()
-                        .split("T")[0],
+                        .split(
+                            "T"
+                        )[0],
 
                 notes:
                     `Completed workout plan: ${planId}`,
@@ -647,6 +1036,11 @@ function WorkoutPlayer() {
                 sets
             };
 
+            console.log(
+                "Saving workout payload:",
+                payload
+            );
+
             const response =
                 await api.post(
                     "/workout-sessions",
@@ -654,11 +1048,15 @@ function WorkoutPlayer() {
                 );
 
             setSavedSession(
-                response.data || null
+                response.data ||
+                    null
             );
 
             setCompleted(true);
-            setMode("completed");
+
+            setMode(
+                "completed"
+            );
         } catch (requestError) {
             console.error(
                 "Error saving workout session:",
@@ -669,16 +1067,18 @@ function WorkoutPlayer() {
                 false;
 
             if (
-                requestError.response?.status ===
-                401
+                requestError.response
+                    ?.status === 401
             ) {
                 setSaveError(
                     "Your session has expired. Please login again."
                 );
             } else {
                 const backendMessage =
-                    requestError.response?.data?.message ||
-                    requestError.response?.data?.error;
+                    requestError.response
+                        ?.data?.message ||
+                    requestError.response
+                        ?.data?.error;
 
                 setSaveError(
                     backendMessage ||
@@ -690,6 +1090,10 @@ function WorkoutPlayer() {
         }
     };
 
+    // =====================================================
+    // SAVE AFTER COMPLETION
+    // =====================================================
+
     useEffect(() => {
         if (
             completed &&
@@ -698,9 +1102,11 @@ function WorkoutPlayer() {
             saveWorkout();
         }
 
-        // Completion should trigger save only once.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [completed, mode]);
+    }, [
+        completed,
+        mode
+    ]);
 
     // =====================================================
     // LOADING
@@ -709,19 +1115,32 @@ function WorkoutPlayer() {
     if (loading) {
         return (
             <div
-    className="wt-workout-player-page"
-    style={styles.centerPage}
->
-                <div style={styles.loadingIcon}>
+                className="wt-workout-player-page"
+                style={styles.centerPage}
+            >
+                <div
+                    style={
+                        styles.loadingIcon
+                    }
+                >
                     🏋️
                 </div>
 
-                <h2 style={styles.centerTitle}>
+                <h2
+                    style={
+                        styles.centerTitle
+                    }
+                >
                     Loading Workout...
                 </h2>
 
-                <p style={styles.centerText}>
-                    Preparing your exercises.
+                <p
+                    style={
+                        styles.centerText
+                    }
+                >
+                    Preparing your
+                    exercises.
                 </p>
             </div>
         );
@@ -733,49 +1152,213 @@ function WorkoutPlayer() {
 
     if (loadError) {
         return (
-            <div style={styles.centerPage}>
-                <div style={styles.errorIcon}>
+            <div
+                className="wt-workout-player-page"
+                style={styles.centerPage}
+            >
+                <div
+                    style={
+                        styles.errorIcon
+                    }
+                >
                     !
                 </div>
 
-                <h2 style={styles.centerTitle}>
-                    Unable to load workout
+                <h2
+                    style={
+                        styles.centerTitle
+                    }
+                >
+                    Unable to Load Workout
                 </h2>
 
-                <p style={styles.errorText}>
+                <p
+                    style={
+                        styles.centerText
+                    }
+                >
                     {loadError}
                 </p>
 
-                <p style={styles.planId}>
-                    Plan ID: {planId}
-                </p>
+                <button
+                    type="button"
+                    onClick={() =>
+                        navigate(
+                            "/workout-plans"
+                        )
+                    }
+                    style={
+                        styles.primaryButton
+                    }
+                >
+                    Back to Workout Plans
+                </button>
+            </div>
+        );
+    }
 
-                <div style={styles.buttonRow}>
-                    <button
-                        type="button"
-                        onClick={
-                            loadExercises
-                        }
+    // =====================================================
+    // COMPLETED
+    // =====================================================
+
+    if (
+        completed &&
+        mode === "completed"
+    ) {
+        return (
+            <div
+                className="wt-workout-player-page"
+                style={styles.page}
+            >
+                <div
+                    style={
+                        styles.completedCard
+                    }
+                >
+                    <div
                         style={
-                            styles.primaryButton
+                            styles.completedIcon
                         }
                     >
-                        Try Again
-                    </button>
+                        ✓
+                    </div>
 
-                    <button
-                        type="button"
-                        onClick={() =>
-                            navigate(
-                                "/workout-plans"
-                            )
-                        }
+                    <h1
                         style={
-                            styles.secondaryButton
+                            styles.completedTitle
                         }
                     >
-                        Back to Plans
-                    </button>
+                        Workout Completed!
+                    </h1>
+
+                    {saving && (
+                        <p
+                            style={
+                                styles.savingText
+                            }
+                        >
+                            Saving your workout...
+                        </p>
+                    )}
+
+                    {saveError && (
+                        <div
+                            style={
+                                styles.saveError
+                            }
+                        >
+                            {saveError}
+                        </div>
+                    )}
+
+                    {!saving &&
+                        !saveError && (
+                            <p
+                                style={
+                                    styles.successText
+                                }
+                            >
+                                Your workout has
+                                been saved
+                                successfully.
+                            </p>
+                        )}
+
+                    <div
+                        style={
+                            styles.summaryGrid
+                        }
+                    >
+                        <div
+                            style={
+                                styles.summaryCard
+                            }
+                        >
+                            <strong>
+                                {exercises.length}
+                            </strong>
+                            <span>
+                                Exercises
+                            </span>
+                        </div>
+
+                        <div
+                            style={
+                                styles.summaryCard
+                            }
+                        >
+                            <strong>
+                                {totalSets}
+                            </strong>
+                            <span>
+                                Sets
+                            </span>
+                        </div>
+
+                        <div
+                            style={
+                                styles.summaryCard
+                            }
+                        >
+                            <strong>
+                                {Math.round(
+                                    totalVolume
+                                )}
+                            </strong>
+                            <span>
+                                Volume (kg)
+                            </span>
+                        </div>
+
+                        <div
+                            style={
+                                styles.summaryCard
+                            }
+                        >
+                            <strong>
+                                {formatTime(
+                                    totalDuration
+                                )}
+                            </strong>
+                            <span>
+                                Time
+                            </span>
+                        </div>
+                    </div>
+
+                    <div
+                        style={
+                            styles.completedActions
+                        }
+                    >
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigate(
+                                    "/workout-history"
+                                )
+                            }
+                            style={
+                                styles.primaryButton
+                            }
+                        >
+                            View Workout History
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigate(
+                                    "/workout-plans"
+                                )
+                            }
+                            style={
+                                styles.secondaryButton
+                            }
+                        >
+                            Back to Workout Plans
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -785,14 +1368,18 @@ function WorkoutPlayer() {
     // NO EXERCISE
     // =====================================================
 
-    if (
-        !currentExercise &&
-        mode !== "completed"
-    ) {
+    if (!currentExercise) {
         return (
-            <div style={styles.centerPage}>
-                <h2 style={styles.centerTitle}>
-                    No workout exercise available
+            <div
+                className="wt-workout-player-page"
+                style={styles.centerPage}
+            >
+                <h2
+                    style={
+                        styles.centerTitle
+                    }
+                >
+                    No Exercise Found
                 </h2>
 
                 <button
@@ -813,226 +1400,26 @@ function WorkoutPlayer() {
     }
 
     // =====================================================
-    // COMPLETED
+    // MAIN WORKOUT SCREEN
     // =====================================================
 
-   if (mode === "completed") {
     return (
         <div
             className="wt-workout-player-page"
             style={styles.page}
         >
-                <div style={styles.container}>
-                    <div
-                        style={
-                            styles.completedCard
-                        }
-                    >
-                        <div
-                            style={
-                                styles.completedIcon
-                            }
-                        >
-                            ✓
-                        </div>
-
-                        <h1
-                            style={
-                                styles.completedTitle
-                            }
-                        >
-                            Workout Completed!
-                        </h1>
-
-                        <p
-                            style={
-                                styles.completedText
-                            }
-                        >
-                            Great job. Your workout
-                            has been completed.
-                        </p>
-
-                        <div
-                            style={
-                                styles.summaryGrid
-                            }
-                        >
-                            <div
-                                style={
-                                    styles.summaryCard
-                                }
-                            >
-                                <strong>
-                                    {
-                                        exercises.length
-                                    }
-                                </strong>
-
-                                <span>
-                                    Exercises
-                                </span>
-                            </div>
-
-                            <div
-                                style={
-                                    styles.summaryCard
-                                }
-                            >
-                                <strong>
-                                    {totalSets}
-                                </strong>
-
-                                <span>
-                                    Sets
-                                </span>
-                            </div>
-
-                            <div
-                                style={
-                                    styles.summaryCard
-                                }
-                            >
-                                <strong>
-                                    {totalVolume.toFixed(
-                                        2
-                                    )}
-                                </strong>
-
-                                <span>
-                                    Volume
-                                </span>
-                            </div>
-                        </div>
-
-                        {saving && (
-                            <p
-                                style={
-                                    styles.savingText
-                                }
-                            >
-                                Saving workout
-                                session...
-                            </p>
-                        )}
-
-                        {saveError && (
-                            <div
-                                style={
-                                    styles.saveError
-                                }
-                            >
-                                <div>
-                                    {saveError}
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={
-                                        saveWorkout
-                                    }
-                                    style={
-                                        styles.retryButton
-                                    }
-                                    disabled={
-                                        saving
-                                    }
-                                >
-                                    Retry Save
-                                </button>
-                            </div>
-                        )}
-
-                        {!saving &&
-                            !saveError &&
-                            savedSession && (
-                                <div
-                                    style={
-                                        styles.successMessage
-                                    }
-                                >
-                                    ✓ Workout session
-                                    saved successfully.
-                                </div>
-                            )}
-
-                        <div
-                            style={
-                                styles.buttonRow
-                            }
-                        >
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(
-                                        "/workout-history"
-                                    )
-                                }
-                                style={
-                                    styles.primaryButton
-                                }
-                            >
-                                View Workout History
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    navigate(
-                                        "/workout-plans"
-                                    )
-                                }
-                                style={
-                                    styles.secondaryButton
-                                }
-                            >
-                                Back to Plans
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const exerciseName =
-        getExerciseName(
-            currentExercise
-        );
-
-    const category =
-        getCategory(currentExercise);
-
-    const equipment =
-        getEquipment(currentExercise);
-
-    const duration =
-        getDuration(currentExercise);
-
-    const rest =
-        getRest(currentExercise);
-
-    // =====================================================
-    // PLAYER
-    // =====================================================
-
-    return (
-        <div style={styles.page}>
-            <div style={styles.container}>
-
+            <div
+                style={
+                    styles.playerContainer
+                }
+            >
                 {/* HEADER */}
 
-                <header style={styles.header}>
-                    <div>
-                        <div style={styles.eyebrow}>
-                            WORKOUT PLAYER
-                        </div>
-
-                        <h1 style={styles.title}>
-                            Workout Plan #{planId}
-                        </h1>
-                    </div>
-
+                <div
+                    style={
+                        styles.header
+                    }
+                >
                     <button
                         type="button"
                         onClick={() =>
@@ -1041,161 +1428,413 @@ function WorkoutPlayer() {
                             )
                         }
                         style={
-                            styles.exitButton
+                            styles.backButton
                         }
                     >
-                        Exit Workout
+                        ← Back
                     </button>
-                </header>
 
-                {/* PROGRESS */}
-
-                <section
-                    style={
-                        styles.progressCard
-                    }
-                >
                     <div
                         style={
-                            styles.progressHeader
+                            styles.progressInfo
                         }
                     >
                         <span>
                             Exercise{" "}
-                            {currentIndex + 1}{" "}
+                            {currentIndex +
+                                1}{" "}
                             of{" "}
-                            {exercises.length}
+                            {
+                                exercises.length
+                            }
                         </span>
 
-                        <strong>
-                            {Math.round(
-                                progressPercentage
-                            )}
-                            %
-                        </strong>
-                    </div>
-
-                    <div
-                        style={
-                            styles.progressTrack
-                        }
-                    >
                         <div
-                            style={{
-                                ...styles.progressFill,
-                                width: `${progressPercentage}%`
-                            }}
-                        />
+                            style={
+                                styles.progressTrack
+                            }
+                        >
+                            <div
+                                style={{
+                                    ...styles.progressBar,
+                                    width: `${progressPercentage}%`
+                                }}
+                            />
+                        </div>
                     </div>
-                </section>
+                </div>
 
-                {/* PLAYER */}
+                {/* EXERCISE CARD */}
 
-                <section
+                <div
                     style={
-                        styles.playerCard
+                        styles.exerciseCard
                     }
                 >
                     <div
                         style={
-                            styles.exerciseHeader
+                            styles.exerciseTop
                         }
                     >
                         <div>
                             <span
-                                style={{
-                                    ...styles.modeBadge,
-                                    ...(mode ===
-                                    "rest"
-                                        ? styles.restBadge
-                                        : {})
-                                }}
+                                style={
+                                    styles.categoryBadge
+                                }
                             >
-                                {mode === "rest"
-                                    ? "REST"
-                                    : "EXERCISE"}
+                                {
+                                    getCategory(
+                                        currentExercise
+                                    )
+                                }
                             </span>
 
-                            <h2
+                            <h1
                                 style={
                                     styles.exerciseTitle
                                 }
                             >
-                                {mode === "rest"
-                                    ? "Take a Rest"
-                                    : exerciseName}
-                            </h2>
+                                {
+                                    getExerciseName(
+                                        currentExercise
+                                    )
+                                }
+                            </h1>
 
-                            {mode ===
-                                "exercise" && (
-                                <div
-                                    style={
-                                        styles.metaRow
-                                    }
-                                >
-                                    <span
-                                        style={
-                                            styles.metaBadge
-                                        }
-                                    >
-                                        {category}
-                                    </span>
+                            <p
+                                style={
+                                    styles.equipmentText
+                                }
+                            >
+                                Equipment:{" "}
+                                {
+                                    getEquipment(
+                                        currentExercise
+                                    )
+                                }
+                            </p>
+                        </div>
 
-                                    <span
-                                        style={
-                                            styles.metaBadge
-                                        }
-                                    >
-                                        {equipment}
-                                    </span>
-
-                                    <span
-                                        style={
-                                            styles.metaBadge
-                                        }
-                                    >
-                                        {duration}s
-                                    </span>
-
-                                    <span
-                                        style={
-                                            styles.metaBadge
-                                        }
-                                    >
-                                        {rest}s rest
-                                    </span>
-                                </div>
-                            )}
+                        <div
+                            style={
+                                styles.trackingBadge
+                            }
+                        >
+                            {currentTrackingType ===
+                            "TIME"
+                                ? "⏱ TIME"
+                                : "🔢 REPS"}
                         </div>
                     </div>
 
-                    {/* TIMER */}
+                    {/* SET INFORMATION */}
 
                     <div
                         style={
-                            styles.timerCircle
+                            styles.targetRow
                         }
                     >
                         <div
                             style={
-                                styles.timerLabel
+                                styles.targetItem
                             }
                         >
-                            {mode === "rest"
-                                ? "REST"
-                                : "TIME"}
+                            <span>
+                                Target
+                            </span>
+
+                            <strong>
+                                {currentTrackingType ===
+                                "TIME"
+                                    ? `${currentTargetValue}s`
+                                    : `${currentTargetValue} reps`}
+                            </strong>
                         </div>
 
                         <div
                             style={
-                                styles.timerValue
+                                styles.targetItem
                             }
                         >
-                            {formatTime(
-                                timeLeft
-                            )}
+                            <span>
+                                Sets
+                            </span>
+
+                            <strong>
+                                {
+                                    currentTargetSets
+                                }
+                            </strong>
+                        </div>
+
+                        <div
+                            style={
+                                styles.targetItem
+                            }
+                        >
+                            <span>
+                                Current Set
+                            </span>
+
+                            <strong>
+                                {
+                                    currentSetNumber
+                                }
+                            </strong>
+                        </div>
+
+                        <div
+                            style={
+                                styles.targetItem
+                            }
+                        >
+                            <span>
+                                Rest
+                            </span>
+
+                            <strong>
+                                {getRest(
+                                    currentExercise
+                                )}
+                                s
+                            </strong>
                         </div>
                     </div>
+
+                    {/* TIME MODE */}
+
+                    {mode ===
+                        "exercise" &&
+                        currentTrackingType ===
+                            "TIME" && (
+                            <div
+                                style={
+                                    styles.timerSection
+                                }
+                            >
+                                <div
+                                    style={
+                                        styles.timerCircle
+                                    }
+                                >
+                                    <span
+                                        style={
+                                            styles.timerText
+                                        }
+                                    >
+                                        {formatTime(
+                                            timeLeft
+                                        )}
+                                    </span>
+                                </div>
+
+                                <div
+                                    style={
+                                        styles.timerLabel
+                                    }
+                                >
+                                    {isRunning
+                                        ? "Exercise in progress"
+                                        : "Ready to start"}
+                                </div>
+                            </div>
+                        )}
+
+                    {/* REPS MODE */}
+
+                    {mode ===
+                        "exercise" &&
+                        currentTrackingType ===
+                            "REPS" && (
+                            <div
+                                style={
+                                    styles.repsSection
+                                }
+                            >
+                                <h3
+                                    style={
+                                        styles.sectionTitle
+                                    }
+                                >
+                                    Record Set
+                                </h3>
+
+                                <div
+                                    style={
+                                        styles.formGrid
+                                    }
+                                >
+                                    <div>
+                                        <label
+                                            style={
+                                                styles.label
+                                            }
+                                        >
+                                            Reps
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={
+                                                setForm.reps
+                                            }
+                                            onChange={e =>
+                                                setSetForm(
+                                                    previous => ({
+                                                        ...previous,
+                                                        reps: e
+                                                            .target
+                                                            .value
+                                                    })
+                                                )
+                                            }
+                                            placeholder="Reps"
+                                            style={
+                                                styles.input
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            style={
+                                                styles.label
+                                            }
+                                        >
+                                            Weight (kg)
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            value={
+                                                setForm.weight
+                                            }
+                                            onChange={e =>
+                                                setSetForm(
+                                                    previous => ({
+                                                        ...previous,
+                                                        weight: e
+                                                            .target
+                                                            .value
+                                                    })
+                                                )
+                                            }
+                                            placeholder="0"
+                                            style={
+                                                styles.input
+                                            }
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            style={
+                                                styles.label
+                                            }
+                                        >
+                                            RPE
+                                        </label>
+
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="10"
+                                            step="0.5"
+                                            value={
+                                                setForm.rpe
+                                            }
+                                            onChange={e =>
+                                                setSetForm(
+                                                    previous => ({
+                                                        ...previous,
+                                                        rpe: e
+                                                            .target
+                                                            .value
+                                                    })
+                                                )
+                                            }
+                                            placeholder="Optional"
+                                            style={
+                                                styles.input
+                                            }
+                                        />
+                                    </div>
+                                </div>
+
+                                {setError && (
+                                    <div
+                                        style={
+                                            styles.formError
+                                        }
+                                    >
+                                        {
+                                            setError
+                                        }
+                                    </div>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        addRepSet
+                                    }
+                                    style={
+                                        styles.addSetButton
+                                    }
+                                >
+                                    + Add Set
+                                </button>
+                            </div>
+                        )}
+
+                    {/* REST */}
+
+                    {mode ===
+                        "rest" && (
+                        <div
+                            style={
+                                styles.restSection
+                            }
+                        >
+                            <div
+                                style={
+                                    styles.restIcon
+                                }
+                            >
+                                ⏸
+                            </div>
+
+                            <h2
+                                style={
+                                    styles.restTitle
+                                }
+                            >
+                                Rest
+                            </h2>
+
+                            <div
+                                style={
+                                    styles.restTimer
+                                }
+                            >
+                                {formatTime(
+                                    timeLeft
+                                )}
+                            </div>
+
+                            <p
+                                style={
+                                    styles.centerText
+                                }
+                            >
+                                Get ready for the
+                                next set/exercise.
+                            </p>
+                        </div>
+                    )}
 
                     {/* CONTROLS */}
 
@@ -1204,309 +1843,145 @@ function WorkoutPlayer() {
                             styles.controls
                         }
                     >
-                        {!isRunning ? (
-                            <button
-                                type="button"
-                                onClick={
-                                    startWorkout
-                                }
-                                style={
-                                    styles.primaryButton
-                                }
-                            >
-                                ▶ Start
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                onClick={
-                                    pauseWorkout
-                                }
-                                style={
-                                    styles.warningButton
-                                }
-                            >
-                                ❚❚ Pause
-                            </button>
+                        {mode ===
+                            "exercise" && (
+                            <>
+                                {!isRunning ? (
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            startWorkout
+                                        }
+                                        style={
+                                            styles.primaryButton
+                                        }
+                                    >
+                                        ▶ Start
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            pauseWorkout
+                                        }
+                                        style={
+                                            styles.pauseButton
+                                        }
+                                    >
+                                        ⏸ Pause
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        skipExercise
+                                    }
+                                    style={
+                                        styles.secondaryButton
+                                    }
+                                >
+                                    Skip →
+                                </button>
+                            </>
                         )}
 
-                        <button
-                            type="button"
-                            onClick={
-                                skipExercise
-                            }
-                            style={
-                                styles.secondaryButton
-                            }
-                        >
-                            Skip →
-                        </button>
+                        {mode ===
+                            "rest" && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={
+                                        () =>
+                                            moveToNextExercise()
+                                    }
+                                    style={
+                                        styles.primaryButton
+                                    }
+                                >
+                                    Continue →
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        () =>
+                                            setIsRunning(
+                                                previous =>
+                                                    !previous
+                                            )
+                                    }
+                                    style={
+                                        styles.secondaryButton
+                                    }
+                                >
+                                    {isRunning
+                                        ? "⏸ Pause Rest"
+                                        : "▶ Resume Rest"}
+                                </button>
+                            </>
+                        )}
                     </div>
-                </section>
 
-                {/* SET TRACKING */}
+                    {/* COMPLETED SETS */}
 
-                {mode === "exercise" && (
-                    <section
-                        style={
-                            styles.setTrackingCard
-                        }
-                    >
+                    {currentExerciseSets.length >
+                        0 && (
                         <div
                             style={
-                                styles.sectionHeader
+                                styles.completedSetsSection
                             }
                         >
-                            <div>
-                                <span
-                                    style={
-                                        styles.eyebrow
-                                    }
-                                >
-                                    SET TRACKING
-                                </span>
-
-                                <h3
-                                    style={
-                                        styles.sectionTitle
-                                    }
-                                >
-                                    Record Your Set
-                                </h3>
-                            </div>
-
-                            <span
+                            <h3
                                 style={
-                                    styles.setCount
+                                    styles.sectionTitle
                                 }
                             >
-                                {
-                                    currentExerciseSets.length
-                                }{" "}
-                                sets
-                            </span>
-                        </div>
+                                Completed Sets
+                            </h3>
 
-                        {setError && (
-                            <div
-                                style={
-                                    styles.validationError
-                                }
-                            >
-                                {setError}
-                            </div>
-                        )}
-
-                        <div
-                            style={
-                                styles.formGrid
-                            }
-                        >
-                            <label
-                                style={
-                                    styles.field
-                                }
-                            >
-                                <span>
-                                    Reps *
-                                </span>
-
-                                <input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={
-                                        setForm.reps
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setSetForm(
-                                            (
-                                                previous
-                                            ) => ({
-                                                ...previous,
-                                                reps:
-                                                    event
-                                                        .target
-                                                        .value
-                                            })
-                                        )
-                                    }
-                                    placeholder="e.g. 15"
-                                    style={
-                                        styles.input
-                                    }
-                                />
-                            </label>
-
-                            <label
-                                style={
-                                    styles.field
-                                }
-                            >
-                                <span>
-                                    Weight (kg)
-                                </span>
-
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    value={
-                                        setForm.weight
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setSetForm(
-                                            (
-                                                previous
-                                            ) => ({
-                                                ...previous,
-                                                weight:
-                                                    event
-                                                        .target
-                                                        .value
-                                            })
-                                        )
-                                    }
-                                    placeholder="0 for bodyweight"
-                                    style={
-                                        styles.input
-                                    }
-                                />
-                            </label>
-
-                            <label
-                                style={
-                                    styles.field
-                                }
-                            >
-                                <span>
-                                    RPE (0–10)
-                                </span>
-
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="10"
-                                    step="0.5"
-                                    value={
-                                        setForm.rpe
-                                    }
-                                    onChange={(
-                                        event
-                                    ) =>
-                                        setSetForm(
-                                            (
-                                                previous
-                                            ) => ({
-                                                ...previous,
-                                                rpe:
-                                                    event
-                                                        .target
-                                                        .value
-                                            })
-                                        )
-                                    }
-                                    placeholder="Optional"
-                                    style={
-                                        styles.input
-                                    }
-                                />
-                            </label>
-
-                            <button
-                                type="button"
-                                onClick={addSet}
-                                style={
-                                    styles.addSetButton
-                                }
-                            >
-                                + Add Set
-                            </button>
-                        </div>
-
-                        {/* SET LIST */}
-
-                        {currentExerciseSets.length >
-                            0 && (
                             <div
                                 style={
                                     styles.setList
                                 }
                             >
-                                <div
-                                    style={
-                                        styles.setListHeader
-                                    }
-                                >
-                                    <span>
-                                        Set
-                                    </span>
-
-                                    <span>
-                                        Reps
-                                    </span>
-
-                                    <span>
-                                        Weight
-                                    </span>
-
-                                    <span>
-                                        RPE
-                                    </span>
-
-                                    <span>
-                                        Volume
-                                    </span>
-
-                                    <span />
-                                </div>
-
                                 {currentExerciseSets.map(
-                                    (set) => (
+                                    set => (
                                         <div
-                                            key={`${currentExerciseId}-${set.setNumber}`}
+                                            key={
+                                                `${set.exerciseId}-${set.setNumber}`
+                                            }
                                             style={
                                                 styles.setRow
                                             }
                                         >
-                                            <span>
-                                                #
-                                                {
-                                                    set.setNumber
-                                                }
-                                            </span>
+                                            <div>
+                                                <strong>
+                                                    Set{" "}
+                                                    {
+                                                        set.setNumber
+                                                    }
+                                                </strong>
+                                            </div>
 
-                                            <span>
-                                                {
-                                                    set.reps
-                                                }
-                                            </span>
+                                            <div>
+                                                {set.durationSeconds >
+                                                0
+                                                    ? `⏱ ${formatTime(
+                                                          set.durationSeconds
+                                                      )}`
+                                                    : `🔢 ${set.reps} reps`}
+                                            </div>
 
-                                            <span>
-                                                {Number(
-                                                    set.weight
-                                                ).toFixed(
-                                                    1
-                                                )}{" "}
-                                                kg
-                                            </span>
-
-                                            <span>
-                                                {set.rpe ??
-                                                    "—"}
-                                            </span>
-
-                                            <span>
-                                                {Number(
-                                                    set.volume
-                                                ).toFixed(
-                                                    1
-                                                )}
-                                            </span>
+                                            {set.durationSeconds ===
+                                                0 && (
+                                                <div>
+                                                    {
+                                                        set.weight
+                                                    }{" "}
+                                                    kg
+                                                </div>
+                                            )}
 
                                             <button
                                                 type="button"
@@ -1518,608 +1993,656 @@ function WorkoutPlayer() {
                                                 style={
                                                     styles.removeButton
                                                 }
-                                                title="Remove set"
                                             >
-                                                ×
+                                                Remove
                                             </button>
                                         </div>
                                     )
                                 )}
                             </div>
-                        )}
-
-                        <div
-                            style={
-                                styles.trackingNote
-                            }
-                        >
-                            Bodyweight exercises can
-                            use{" "}
-                            <strong>
-                                0 kg
-                            </strong>
-                            . Volume is calculated
-                            as weight × reps.
-                        </div>
-                    </section>
-                )}
-
-                {saveError &&
-                    mode !== "completed" && (
-                        <div
-                            style={
-                                styles.saveError
-                            }
-                        >
-                            {saveError}
                         </div>
                     )}
+                </div>
             </div>
         </div>
     );
 }
 
 // =====================================================
-// THEME-AWARE STYLES
+// INLINE STYLES
 // =====================================================
 
 const styles = {
-
     page: {
-        minHeight: "calc(100vh - 70px)",
-        backgroundColor:
-            "var(--wt-page-background)",
         color:
             "var(--wt-text-primary)",
-        padding: "30px 20px",
-        boxSizing: "border-box"
-    },
-
-    container: {
-        width: "100%",
-        maxWidth: "1100px",
-        margin: "0 auto"
+        minHeight:
+            "100vh",
+        padding:
+            "24px",
+        boxSizing:
+            "border-box"
     },
 
     centerPage: {
-        minHeight: "calc(100vh - 70px)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        padding: "30px",
-        boxSizing: "border-box",
-        backgroundColor:
-            "var(--wt-page-background)",
-        color:
-            "var(--wt-text-primary)"
-    },
-
-    centerTitle: {
         color:
             "var(--wt-text-primary)",
-        margin: "10px 0"
+        minHeight:
+            "70vh",
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        textAlign:
+            "center",
+        padding:
+            "30px"
     },
 
-    centerText: {
+    playerContainer: {
+        maxWidth:
+            "1100px",
+        margin:
+            "0 auto"
+    },
+
+    header: {
+        display:
+            "flex",
+        alignItems:
+            "center",
+        gap:
+            "24px",
+        marginBottom:
+            "20px"
+    },
+
+    backButton: {
+        border:
+            "none",
+        background:
+            "transparent",
+        cursor:
+            "pointer",
+        fontSize:
+            "15px",
+        fontWeight:
+            "600",
+        padding:
+            "8px"
+    },
+
+    progressInfo: {
+        flex:
+            1,
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        gap:
+            "8px",
+        fontSize:
+            "14px"
+    },
+
+    progressTrack: {
+        width:
+            "100%",
+        height:
+            "7px",
+        borderRadius:
+            "10px",
+        background:
+            "var(--wt-border)",
+        overflow:
+            "hidden"
+    },
+
+    progressBar: {
+        height:
+            "100%",
+        background:
+            "#2563eb",
+        borderRadius:
+            "10px",
+        transition:
+            "width 0.3s ease"
+    },
+
+    exerciseCard: {
         color:
-            "var(--wt-text-secondary)"
+            "var(--wt-text-primary)",
+        background:
+            "var(--wt-surface)",
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius:
+            "20px",
+        padding:
+            "30px",
+        boxShadow:
+            "var(--wt-shadow)"
     },
 
-    loadingIcon: {
-        fontSize: "60px",
-        marginBottom: "15px"
+    exerciseTop: {
+        display:
+            "flex",
+        justifyContent:
+            "space-between",
+        alignItems:
+            "flex-start",
+        gap:
+            "20px"
     },
 
-    errorIcon: {
-        width: "60px",
-        height: "60px",
-        borderRadius: "50%",
-        backgroundColor:
-            "var(--wt-danger-soft, #fee2e2)",
+    categoryBadge: {
+        display:
+            "inline-block",
+        padding:
+            "6px 12px",
+        borderRadius:
+            "20px",
+        fontSize:
+            "12px",
+        fontWeight:
+            "700",
+        background:
+            "var(--wt-accent-soft)",
         color:
-            "var(--wt-danger, #dc2626)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "30px",
-        fontWeight: "800",
-        marginBottom: "20px"
+            "var(--wt-accent)"
     },
 
-    errorText: {
-        maxWidth: "650px",
-        color:
-            "var(--wt-danger, #dc2626)",
-        lineHeight: 1.6
+    exerciseTitle: {
+        margin:
+            "12px 0 6px",
+        fontSize:
+            "32px"
     },
 
-    planId: {
+    equipmentText: {
+        margin:
+            0,
         color:
             "var(--wt-text-muted)"
     },
 
-    header: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "20px",
-        marginBottom: "25px",
-        flexWrap: "wrap"
-    },
-
-    eyebrow: {
-        fontSize: "12px",
-        fontWeight: "800",
-        letterSpacing: "2px",
+    trackingBadge: {
+        padding:
+            "9px 14px",
+        borderRadius:
+            "20px",
+        fontWeight:
+            "700",
+        background:
+            "#2563eb",
         color:
-            "var(--wt-accent)",
-        marginBottom: "6px"
+            "#ffffff",
+        whiteSpace:
+            "nowrap"
     },
 
-    title: {
-        margin: 0,
-        fontSize: "32px",
-        color:
-            "var(--wt-text-primary)"
+    targetRow: {
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(4, 1fr)",
+        gap:
+            "12px",
+        marginTop:
+            "25px",
+        marginBottom:
+            "25px"
     },
 
-    exitButton: {
-        border:
-            "1px solid var(--wt-border)",
-        backgroundColor:
-            "var(--wt-surface)",
-        color:
-            "var(--wt-text-primary)",
-        borderRadius: "10px",
-        padding: "10px 16px",
-        cursor: "pointer",
-        fontWeight: "700"
-    },
-
-    progressCard: {
-        backgroundColor:
-            "var(--wt-surface)",
-        border:
-            "1px solid var(--wt-border)",
-        borderRadius: "16px",
-        padding: "18px",
-        marginBottom: "20px",
-        boxShadow:
-            "var(--wt-shadow)"
-    },
-
-    progressHeader: {
-        display: "flex",
-        justifyContent: "space-between",
-        marginBottom: "10px",
-        color:
-            "var(--wt-text-secondary)"
-    },
-
-    progressTrack: {
-        height: "8px",
-        borderRadius: "999px",
-        backgroundColor:
-            "var(--wt-surface-tertiary)",
-        overflow: "hidden"
-    },
-
-    progressFill: {
-        height: "100%",
-        borderRadius: "999px",
-        backgroundColor:
-            "var(--wt-accent)",
-        transition: "width 0.3s ease"
-    },
-
-    playerCard: {
-        backgroundColor:
-            "var(--wt-surface)",
-        border:
-            "1px solid var(--wt-border)",
-        borderRadius: "20px",
-        padding: "35px",
-        marginBottom: "20px",
-        textAlign: "center",
-        boxShadow:
-            "var(--wt-shadow)"
-    },
-
-    exerciseHeader: {
-        textAlign: "left"
-    },
-
-    modeBadge: {
-        display: "inline-block",
-        backgroundColor:
-            "var(--wt-accent-soft)",
-        color:
-            "var(--wt-accent)",
-        padding: "6px 10px",
-        borderRadius: "999px",
-        fontSize: "11px",
-        fontWeight: "800",
-        letterSpacing: "1px"
-    },
-
-    restBadge: {
-        backgroundColor:
-            "var(--wt-warning-soft, #fef3c7)",
-        color:
-            "var(--wt-warning, #b45309)"
-    },
-
-    exerciseTitle: {
-        fontSize: "36px",
-        margin: "12px 0",
-        color:
-            "var(--wt-text-primary)"
-    },
-
-    metaRow: {
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "8px"
-    },
-
-    metaBadge: {
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "6px 10px",
-        borderRadius: "999px",
-        backgroundColor:
+    targetItem: {
+        padding:
+            "15px",
+        borderRadius:
+            "12px",
+        background:
             "var(--wt-surface-secondary)",
-        border:
-            "1px solid var(--wt-border)",
-        color:
-            "var(--wt-text-secondary)",
-        fontSize: "12px",
-        fontWeight: "600"
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        gap:
+            "5px"
+    },
+
+    timerSection: {
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        padding:
+            "20px"
     },
 
     timerCircle: {
-        width: "230px",
-        height: "230px",
-        borderRadius: "50%",
+        width:
+            "250px",
+        height:
+            "250px",
+        borderRadius:
+            "50%",
         border:
-            "10px solid var(--wt-accent)",
-        margin: "35px auto",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor:
-            "var(--wt-surface-secondary)",
-        boxShadow:
-            "var(--wt-shadow)"
+            "10px solid #2563eb",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        margin:
+            "10px auto 20px"
+    },
+
+    timerText: {
+        fontSize:
+            "52px",
+        fontWeight:
+            "800",
+        fontVariantNumeric:
+            "tabular-nums"
     },
 
     timerLabel: {
         color:
             "var(--wt-text-muted)",
-        fontSize: "13px",
-        letterSpacing: "2px",
-        fontWeight: "800"
+        fontSize:
+            "15px"
     },
 
-    timerValue: {
+    repsSection: {
+        marginTop:
+            "20px",
+        padding:
+            "20px",
+        borderRadius:
+            "15px",
+        background:
+            "var(--wt-surface-secondary)"
+    },
+
+    sectionTitle: {
+        margin:
+            "0 0 15px",
+        fontSize:
+            "18px"
+    },
+
+    formGrid: {
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(3, 1fr)",
+        gap:
+            "15px"
+    },
+
+    label: {
+        display:
+            "block",
+        marginBottom:
+            "7px",
+        fontSize:
+            "13px",
+        fontWeight:
+            "600"
+    },
+
+    input: {
+        width:
+            "100%",
+        boxSizing:
+            "border-box",
+        padding:
+            "12px",
+        borderRadius:
+            "9px",
+        border:
+            "1px solid var(--wt-border-strong)",
+        background:
+            "var(--wt-input-background)",
         color:
-            "var(--wt-text-primary)",
-        fontSize: "48px",
-        fontWeight: "800",
-        marginTop: "8px",
+            "var(--wt-input-text)",
+        fontSize:
+            "15px"
+    },
+
+    addSetButton: {
+        marginTop:
+            "15px",
+        padding:
+            "11px 18px",
+        border:
+            "none",
+        borderRadius:
+            "9px",
+        background:
+            "#2563eb",
+        color:
+            "#ffffff",
+        fontWeight:
+            "700",
+        cursor:
+            "pointer"
+    },
+
+    formError: {
+        marginTop:
+            "12px",
+        padding:
+            "10px",
+        borderRadius:
+            "8px",
+        background:
+            "var(--wt-danger-soft)",
+        color:
+            "var(--wt-danger)"
+    },
+
+    restSection: {
+        textAlign:
+            "center",
+        padding:
+            "35px"
+    },
+
+    restIcon: {
+        fontSize:
+            "45px"
+    },
+
+    restTitle: {
+        fontSize:
+            "30px",
+        margin:
+            "10px 0"
+    },
+
+    restTimer: {
+        fontSize:
+            "55px",
+        fontWeight:
+            "800",
         fontVariantNumeric:
             "tabular-nums"
     },
 
     controls: {
-        display: "flex",
-        justifyContent: "center",
-        gap: "12px",
-        flexWrap: "wrap"
+        display:
+            "flex",
+        justifyContent:
+            "center",
+        gap:
+            "12px",
+        marginTop:
+            "25px",
+        flexWrap:
+            "wrap"
     },
 
     primaryButton: {
-        border: "none",
-        backgroundColor:
-            "var(--wt-accent)",
-        color: "#ffffff",
-        borderRadius: "10px",
-        padding: "12px 20px",
-        fontWeight: "700",
-        cursor: "pointer"
+        padding:
+            "12px 22px",
+        border:
+            "none",
+        borderRadius:
+            "10px",
+        background:
+            "#2563eb",
+        color:
+            "#ffffff",
+        fontWeight:
+            "700",
+        cursor:
+            "pointer"
     },
 
     secondaryButton: {
+        padding:
+            "12px 22px",
         border:
-            "1px solid var(--wt-border)",
-        backgroundColor:
-            "var(--wt-surface-secondary)",
+            "1px solid var(--wt-border-strong)",
+        borderRadius:
+            "10px",
+        background:
+            "transparent",
         color:
-            "var(--wt-text-primary)",
-        borderRadius: "10px",
-        padding: "12px 20px",
-        fontWeight: "700",
-        cursor: "pointer"
+            "inherit",
+        fontWeight:
+            "700",
+        cursor:
+            "pointer"
     },
 
-    warningButton: {
-        border: "none",
-        backgroundColor:
-            "var(--wt-warning, #d97706)",
-        color: "#ffffff",
-        borderRadius: "10px",
-        padding: "12px 20px",
-        fontWeight: "700",
-        cursor: "pointer"
-    },
-
-    setTrackingCard: {
-        backgroundColor:
-            "var(--wt-surface)",
+    pauseButton: {
+        padding:
+            "12px 22px",
         border:
-            "1px solid var(--wt-border)",
-        borderRadius: "20px",
-        padding: "25px",
-        boxShadow:
-            "var(--wt-shadow)"
-    },
-
-    sectionHeader: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "15px",
-        marginBottom: "20px",
-        flexWrap: "wrap"
-    },
-
-    sectionTitle: {
-        margin: 0,
-        fontSize: "24px",
+            "none",
+        borderRadius:
+            "10px",
+        background:
+            "#f59e0b",
         color:
-            "var(--wt-text-primary)"
+            "#ffffff",
+        fontWeight:
+            "700",
+        cursor:
+            "pointer"
     },
 
-    setCount: {
-        color:
-            "var(--wt-accent)",
-        backgroundColor:
-            "var(--wt-accent-soft)",
-        padding: "8px 12px",
-        borderRadius: "999px",
-        fontSize: "13px",
-        fontWeight: "700"
-    },
-
-    validationError: {
-        backgroundColor:
-            "var(--wt-danger-soft, #fee2e2)",
-        border:
-            "1px solid var(--wt-danger, #dc2626)",
-        color:
-            "var(--wt-danger, #dc2626)",
-        borderRadius: "10px",
-        padding: "12px 14px",
-        marginBottom: "18px"
-    },
-
-    formGrid: {
-        display: "grid",
-        gridTemplateColumns:
-            "repeat(auto-fit, minmax(150px, 1fr))",
-        gap: "14px",
-        alignItems: "end"
-    },
-
-    field: {
-        display: "flex",
-        flexDirection: "column",
-        gap: "7px",
-        color:
-            "var(--wt-text-secondary)",
-        fontSize: "13px",
-        fontWeight: "700"
-    },
-
-    input: {
-        width: "100%",
-        boxSizing: "border-box",
-        backgroundColor:
-            "var(--wt-input-background)",
-        color:
-            "var(--wt-input-text)",
-        border:
-            "1px solid var(--wt-input-border)",
-        borderRadius: "9px",
-        padding: "12px",
-        outline: "none",
-        fontSize: "14px"
-    },
-
-    addSetButton: {
-        minHeight: "44px",
-        border: "none",
-        backgroundColor:
-            "var(--wt-success, #16a34a)",
-        color: "#ffffff",
-        borderRadius: "9px",
-        padding: "12px 16px",
-        fontWeight: "800",
-        cursor: "pointer"
+    completedSetsSection: {
+        marginTop:
+            "30px",
+        paddingTop:
+            "20px",
+        borderTop:
+            "1px solid var(--wt-border)"
     },
 
     setList: {
-        marginTop: "25px",
-        border:
-            "1px solid var(--wt-border)",
-        borderRadius: "12px",
-        overflow: "hidden"
-    },
-
-    setListHeader: {
-        display: "grid",
-        gridTemplateColumns:
-            "0.7fr 1fr 1fr 1fr 1fr 40px",
-        gap: "10px",
-        padding: "12px",
-        backgroundColor:
-            "var(--wt-surface-secondary)",
-        color:
-            "var(--wt-text-muted)",
-        fontSize: "12px",
-        fontWeight: "800"
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        gap:
+            "8px"
     },
 
     setRow: {
-        display: "grid",
+        display:
+            "grid",
         gridTemplateColumns:
-            "0.7fr 1fr 1fr 1fr 1fr 40px",
-        gap: "10px",
-        alignItems: "center",
-        padding: "13px 12px",
-        borderTop:
-            "1px solid var(--wt-border)",
-        color:
-            "var(--wt-text-primary)"
+            "1fr 1fr 1fr auto",
+        alignItems:
+            "center",
+        gap:
+            "10px",
+        padding:
+            "12px 15px",
+        borderRadius:
+            "10px",
+        background:
+            "var(--wt-surface-secondary)"
     },
 
     removeButton: {
-        width: "30px",
-        height: "30px",
-        border: "none",
-        borderRadius: "7px",
-        backgroundColor:
-            "var(--wt-danger-soft, #fee2e2)",
+        border:
+            "none",
+        background:
+            "transparent",
         color:
-            "var(--wt-danger, #dc2626)",
-        fontSize: "18px",
-        cursor: "pointer"
-    },
-
-    trackingNote: {
-        marginTop: "15px",
-        color:
-            "var(--wt-text-muted)",
-        fontSize: "13px",
-        lineHeight: 1.5
+            "var(--wt-danger)",
+        cursor:
+            "pointer",
+        fontWeight:
+            "600"
     },
 
     completedCard: {
-        maxWidth: "700px",
-        margin: "80px auto",
-        textAlign: "center",
-        backgroundColor:
+        color:
+            "var(--wt-text-primary)",
+        maxWidth:
+            "850px",
+        margin:
+            "50px auto",
+        padding:
+            "40px",
+        borderRadius:
+            "22px",
+        background:
             "var(--wt-surface)",
         border:
             "1px solid var(--wt-border)",
-        borderRadius: "24px",
-        padding: "45px 30px",
+        textAlign:
+            "center",
         boxShadow:
             "var(--wt-shadow)"
     },
 
     completedIcon: {
-        width: "80px",
-        height: "80px",
-        borderRadius: "50%",
-        backgroundColor:
-            "var(--wt-success-soft, #dcfce7)",
+        width:
+            "80px",
+        height:
+            "80px",
+        borderRadius:
+            "50%",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        margin:
+            "0 auto 20px",
+        background:
+            "#16a34a",
         color:
-            "var(--wt-success, #16a34a)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: "42px",
-        fontWeight: "800",
-        margin: "0 auto 20px"
+            "#ffffff",
+        fontSize:
+            "40px",
+        fontWeight:
+            "800"
     },
 
     completedTitle: {
-        color:
-            "var(--wt-text-primary)",
-        marginBottom: "10px"
-    },
-
-    completedText: {
-        color:
-            "var(--wt-text-secondary)",
-        marginBottom: "30px"
-    },
-
-    summaryGrid: {
-        display: "grid",
-        gridTemplateColumns:
-            "repeat(auto-fit, minmax(130px, 1fr))",
-        gap: "12px",
-        marginBottom: "25px"
-    },
-
-    summaryCard: {
-        backgroundColor:
-            "var(--wt-surface-secondary)",
-        border:
-            "1px solid var(--wt-border)",
-        borderRadius: "12px",
-        padding: "18px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-        color:
-            "var(--wt-text-primary)"
+        margin:
+            "0 0 10px",
+        fontSize:
+            "32px"
     },
 
     savingText: {
         color:
-            "var(--wt-accent)",
-        marginBottom: "15px"
+            "var(--wt-text-muted)"
     },
 
-    successMessage: {
-        backgroundColor:
-            "var(--wt-success-soft, #dcfce7)",
-        border:
-            "1px solid var(--wt-success, #16a34a)",
+    successText: {
         color:
-            "var(--wt-success, #15803d)",
-        borderRadius: "10px",
-        padding: "12px",
-        marginBottom: "20px"
+            "var(--wt-success)",
+        fontWeight:
+            "600"
     },
 
     saveError: {
-        backgroundColor:
-            "var(--wt-danger-soft, #fee2e2)",
-        border:
-            "1px solid var(--wt-danger, #dc2626)",
+        margin:
+            "15px 0",
+        padding:
+            "12px",
+        borderRadius:
+            "10px",
+        background:
+            "var(--wt-danger-soft)",
         color:
-            "var(--wt-danger, #dc2626)",
-        borderRadius: "10px",
-        padding: "14px",
-        marginTop: "15px",
-        marginBottom: "15px"
+            "var(--wt-danger)"
     },
 
-    retryButton: {
-        marginLeft: "12px",
-        border:
-            "1px solid var(--wt-danger, #dc2626)",
-        backgroundColor: "transparent",
-        color:
-            "var(--wt-danger, #dc2626)",
-        borderRadius: "7px",
-        padding: "7px 12px",
-        cursor: "pointer"
+    summaryGrid: {
+        display:
+            "grid",
+        gridTemplateColumns:
+            "repeat(4, 1fr)",
+        gap:
+            "12px",
+        margin:
+            "30px 0"
     },
 
-    buttonRow: {
-        display: "flex",
-        justifyContent: "center",
-        flexWrap: "wrap",
-        gap: "12px",
-        marginTop: "20px"
+    summaryCard: {
+        padding:
+            "20px 10px",
+        borderRadius:
+            "14px",
+        background:
+            "var(--wt-surface-secondary)",
+        display:
+            "flex",
+        flexDirection:
+            "column",
+        gap:
+            "5px"
+    },
+
+    completedActions: {
+        display:
+            "flex",
+        justifyContent:
+            "center",
+        gap:
+            "12px",
+        flexWrap:
+            "wrap"
+    },
+
+    loadingIcon: {
+        fontSize:
+            "45px"
+    },
+
+    errorIcon: {
+        width:
+            "55px",
+        height:
+            "55px",
+        borderRadius:
+            "50%",
+        display:
+            "flex",
+        alignItems:
+            "center",
+        justifyContent:
+            "center",
+        background:
+            "#dc2626",
+        color:
+            "#ffffff",
+        fontSize:
+            "30px",
+        fontWeight:
+            "800",
+        marginBottom:
+            "15px"
+    },
+
+    centerTitle: {
+        margin:
+            "10px 0"
+    },
+
+    centerText: {
+        color:
+            "var(--wt-text-muted)"
     }
 };
 

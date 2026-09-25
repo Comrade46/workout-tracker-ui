@@ -4,7 +4,6 @@ import api from "../api/axiosConfig";
 import "./ProgressTracking.css";
 
 function ProgressTracking() {
-
     const navigate = useNavigate();
 
     const [workouts, setWorkouts] = useState([]);
@@ -22,9 +21,7 @@ function ProgressTracking() {
     }, []);
 
     const loadWorkouts = async () => {
-
         try {
-
             setLoading(true);
             setError("");
 
@@ -36,33 +33,108 @@ function ProgressTracking() {
                     ? response.data
                     : []
             );
-
-        } catch (error) {
-
+        } catch (requestError) {
             console.error(
                 "Error loading progress:",
-                error
+                requestError
             );
 
-            if (error.response?.status === 401) {
-
+            if (requestError.response?.status === 401) {
                 setError(
                     "Your session has expired. Please login again."
                 );
-
             } else {
-
                 setError(
+                    requestError.response?.data?.message ||
                     "Unable to load progress data."
                 );
-
             }
-
         } finally {
-
             setLoading(false);
-
         }
+    };
+
+    // =====================================================
+    // HELPERS
+    // =====================================================
+
+    const formatNumber = (value) => {
+        return Number(value || 0).toLocaleString(
+            undefined,
+            {
+                maximumFractionDigits: 2
+            }
+        );
+    };
+
+    const formatDate = (date) => {
+        if (!date) {
+            return "-";
+        }
+
+        const parsed = new Date(date);
+
+        if (Number.isNaN(parsed.getTime())) {
+            return String(date);
+        }
+
+        return parsed.toLocaleDateString(
+            undefined,
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+            }
+        );
+    };
+
+    const formatDuration = (seconds) => {
+        const totalSeconds = Math.max(
+            0,
+            Math.round(Number(seconds || 0))
+        );
+
+        const minutes = Math.floor(
+            totalSeconds / 60
+        );
+
+        const remainingSeconds =
+            totalSeconds % 60;
+
+        if (minutes === 0) {
+            return `${remainingSeconds}s`;
+        }
+
+        if (remainingSeconds === 0) {
+            return `${minutes} min`;
+        }
+
+        return `${minutes}m ${remainingSeconds}s`;
+    };
+
+    /*
+     * TIME has priority over REPS.
+     *
+     * This is important for old records where a TIME
+     * set may also contain a reps value.
+     */
+    const isTimeSet = (set) => {
+        return (
+            set &&
+            set.durationSeconds !== null &&
+            set.durationSeconds !== undefined &&
+            Number(set.durationSeconds) > 0
+        );
+    };
+
+    const isRepsSet = (set) => {
+        return (
+            !isTimeSet(set) &&
+            set &&
+            set.reps !== null &&
+            set.reps !== undefined &&
+            Number(set.reps) > 0
+        );
     };
 
     // =====================================================
@@ -70,19 +142,15 @@ function ProgressTracking() {
     // =====================================================
 
     const allSets = useMemo(() => {
-
         const result = [];
 
         workouts.forEach((workout) => {
-
             if (!Array.isArray(workout.sets)) {
                 return;
             }
 
             workout.sets.forEach((set) => {
-
                 result.push({
-
                     ...set,
 
                     workoutId:
@@ -93,15 +161,11 @@ function ProgressTracking() {
 
                     durationMinutes:
                         workout.durationMinutes
-
                 });
-
             });
-
         });
 
         return result;
-
     }, [workouts]);
 
     // =====================================================
@@ -109,11 +173,9 @@ function ProgressTracking() {
     // =====================================================
 
     const exercises = useMemo(() => {
-
         const map = new Map();
 
         allSets.forEach((set) => {
-
             const name =
                 set.exerciseName ||
                 set.exercise ||
@@ -124,7 +186,6 @@ function ProgressTracking() {
                 name;
 
             if (!map.has(String(id))) {
-
                 map.set(
                     String(id),
                     {
@@ -134,16 +195,13 @@ function ProgressTracking() {
                             set.category || ""
                     }
                 );
-
             }
-
         });
 
         return Array.from(map.values())
             .sort((a, b) =>
                 a.name.localeCompare(b.name)
             );
-
     }, [allSets]);
 
     // =====================================================
@@ -151,43 +209,30 @@ function ProgressTracking() {
     // =====================================================
 
     useEffect(() => {
-
         if (
             !selectedExercise &&
             exercises.length > 0
         ) {
-
             setSelectedExercise(
                 exercises[0].id
             );
-
         }
-
-    }, [exercises, selectedExercise]);
+    }, [
+        exercises,
+        selectedExercise
+    ]);
 
     // =====================================================
     // SELECTED SETS
     // =====================================================
 
     const selectedSets = useMemo(() => {
-
         if (!selectedExercise) {
-            return [];
-        }
-
-        const selected =
-            exercises.find(
-                (exercise) =>
-                    exercise.id === selectedExercise
-            );
-
-        if (!selected) {
             return [];
         }
 
         return allSets
             .filter((set) => {
-
                 const name =
                     set.exerciseName ||
                     set.exercise ||
@@ -201,29 +246,44 @@ function ProgressTracking() {
                     String(id) ===
                     String(selectedExercise)
                 );
-
             })
             .sort((a, b) => {
-
-                const dateA =
+                return (
                     new Date(
                         a.workoutDate || 0
-                    ).getTime();
-
-                const dateB =
+                    ).getTime() -
                     new Date(
                         b.workoutDate || 0
-                    ).getTime();
-
-                return dateA - dateB;
-
+                    ).getTime()
+                );
             });
-
     }, [
         allSets,
-        exercises,
         selectedExercise
     ]);
+
+    // =====================================================
+    // SELECTED EXERCISE TYPE
+    // =====================================================
+
+    const selectedExerciseType = useMemo(() => {
+        if (selectedSets.length === 0) {
+            return "REPS";
+        }
+
+        /*
+         * If any recorded set contains durationSeconds,
+         * consider the exercise TIME-based.
+         */
+        const hasTimeSet =
+            selectedSets.some(
+                (set) => isTimeSet(set)
+            );
+
+        return hasTimeSet
+            ? "TIME"
+            : "REPS";
+    }, [selectedSets]);
 
     // =====================================================
     // SUMMARY
@@ -234,26 +294,84 @@ function ProgressTracking() {
 
     const totalReps =
         selectedSets.reduce(
-            (sum, set) =>
-                sum + Number(set.reps || 0),
+            (sum, set) => {
+                if (!isRepsSet(set)) {
+                    return sum;
+                }
+
+                return (
+                    sum +
+                    Number(set.reps || 0)
+                );
+            },
             0
         );
 
     const totalVolume =
         selectedSets.reduce(
-            (sum, set) =>
-                sum +
-                Number(set.volume ?? 0),
+            (sum, set) => {
+                if (!isRepsSet(set)) {
+                    return sum;
+                }
+
+                const volume =
+                    set.volume !== null &&
+                    set.volume !== undefined
+                        ? Number(set.volume)
+                        : Number(set.weight || 0) *
+                          Number(set.reps || 0);
+
+                return sum + volume;
+            },
             0
         );
 
     const maxWeight =
         selectedSets.reduce(
-            (max, set) =>
-                Math.max(
+            (max, set) => {
+                if (!isRepsSet(set)) {
+                    return max;
+                }
+
+                return Math.max(
                     max,
                     Number(set.weight || 0)
-                ),
+                );
+            },
+            0
+        );
+
+    const totalTime =
+        selectedSets.reduce(
+            (total, set) => {
+                if (!isTimeSet(set)) {
+                    return total;
+                }
+
+                return (
+                    total +
+                    Number(
+                        set.durationSeconds || 0
+                    )
+                );
+            },
+            0
+        );
+
+    const bestDuration =
+        selectedSets.reduce(
+            (best, set) => {
+                if (!isTimeSet(set)) {
+                    return best;
+                }
+
+                return Math.max(
+                    best,
+                    Number(
+                        set.durationSeconds || 0
+                    )
+                );
+            },
             0
         );
 
@@ -262,19 +380,15 @@ function ProgressTracking() {
     // =====================================================
 
     const workoutPerformance = useMemo(() => {
-
         const grouped = {};
 
         selectedSets.forEach((set) => {
-
             const key =
                 set.workoutId ||
                 set.workoutDate;
 
             if (!grouped[key]) {
-
                 grouped[key] = {
-
                     workoutId:
                         set.workoutId,
 
@@ -287,34 +401,66 @@ function ProgressTracking() {
 
                     volume: 0,
 
-                    maxWeight: 0
+                    maxWeight: 0,
 
+                    durationSeconds: 0,
+
+                    bestDuration: 0
                 };
-
             }
 
             grouped[key].sets += 1;
 
-            grouped[key].reps +=
-                Number(set.reps || 0);
+            if (isRepsSet(set)) {
+                grouped[key].reps +=
+                    Number(set.reps || 0);
 
-            grouped[key].volume +=
-                Number(set.volume ?? 0);
+                const volume =
+                    set.volume !== null &&
+                    set.volume !== undefined
+                        ? Number(set.volume)
+                        : Number(set.weight || 0) *
+                          Number(set.reps || 0);
 
-            grouped[key].maxWeight =
-                Math.max(
-                    grouped[key].maxWeight,
-                    Number(set.weight || 0)
-                );
+                grouped[key].volume +=
+                    volume;
 
+                grouped[key].maxWeight =
+                    Math.max(
+                        grouped[key].maxWeight,
+                        Number(
+                            set.weight || 0
+                        )
+                    );
+            }
+
+            if (isTimeSet(set)) {
+                const duration =
+                    Number(
+                        set.durationSeconds || 0
+                    );
+
+                grouped[key].durationSeconds +=
+                    duration;
+
+                grouped[key].bestDuration =
+                    Math.max(
+                        grouped[key].bestDuration,
+                        duration
+                    );
+            }
         });
 
         return Object.values(grouped)
-            .sort((a, b) =>
-                new Date(a.workoutDate || 0) -
-                new Date(b.workoutDate || 0)
+            .sort(
+                (a, b) =>
+                    new Date(
+                        a.workoutDate || 0
+                    ) -
+                    new Date(
+                        b.workoutDate || 0
+                    )
             );
-
     }, [selectedSets]);
 
     // =====================================================
@@ -339,67 +485,29 @@ function ProgressTracking() {
         latest,
         previous
     ) => {
-
-        if (!previous) {
+        if (previous === undefined) {
             return null;
         }
 
-        return Number(latest) -
-            Number(previous);
-
+        return (
+            Number(latest || 0) -
+            Number(previous || 0)
+        );
     };
 
-    const formatDifference = (value) => {
-
+    const formatDifference = (
+        value,
+        formatter = formatNumber
+    ) => {
         if (value === null) {
             return "No previous workout";
         }
 
         if (value > 0) {
-            return `+${value}`;
+            return `+${formatter(value)}`;
         }
 
-        return String(value);
-
-    };
-
-    // =====================================================
-    // HELPERS
-    // =====================================================
-
-    const formatNumber = (value) => {
-
-        return Number(value || 0).toLocaleString(
-            undefined,
-            {
-                maximumFractionDigits: 2
-            }
-        );
-
-    };
-
-    const formatDate = (date) => {
-
-        if (!date) {
-            return "-";
-        }
-
-        const parsed =
-            new Date(date);
-
-        if (Number.isNaN(parsed.getTime())) {
-            return String(date);
-        }
-
-        return parsed.toLocaleDateString(
-            undefined,
-            {
-                day: "2-digit",
-                month: "short",
-                year: "numeric"
-            }
-        );
-
+        return formatter(value);
     };
 
     // =====================================================
@@ -407,11 +515,8 @@ function ProgressTracking() {
     // =====================================================
 
     if (loading) {
-
         return (
-
             <div style={styles.center}>
-
                 <div style={styles.centerIcon}>
                     📈
                 </div>
@@ -423,11 +528,8 @@ function ProgressTracking() {
                 <p style={styles.centerText}>
                     Analyzing your workout history
                 </p>
-
             </div>
-
         );
-
     }
 
     // =====================================================
@@ -435,11 +537,8 @@ function ProgressTracking() {
     // =====================================================
 
     if (error) {
-
         return (
-
             <div style={styles.center}>
-
                 <div style={styles.centerIcon}>
                     ⚠️
                 </div>
@@ -455,11 +554,8 @@ function ProgressTracking() {
                 >
                     Try Again
                 </button>
-
             </div>
-
         );
-
     }
 
     // =====================================================
@@ -467,17 +563,14 @@ function ProgressTracking() {
     // =====================================================
 
     if (workouts.length === 0) {
-
         return (
-
-            <div className="wt-progress-page" style={styles.page}>
-
+            <div
+                className="wt-progress-page"
+                style={styles.page}
+            >
                 <div style={styles.container}>
-
                     <div style={styles.header}>
-
                         <div>
-
                             <div style={styles.eyebrow}>
                                 PERFORMANCE
                             </div>
@@ -488,15 +581,13 @@ function ProgressTracking() {
 
                             <p style={styles.subtitle}>
                                 Track how your workout
-                                performance changes over time.
+                                performance changes
+                                over time.
                             </p>
-
                         </div>
-
                     </div>
 
                     <div style={styles.emptyCard}>
-
                         <div style={styles.emptyIcon}>
                             📈
                         </div>
@@ -506,9 +597,9 @@ function ProgressTracking() {
                         </h2>
 
                         <p style={styles.emptyText}>
-                            Complete a workout and record
-                            your sets to start tracking
-                            your progress.
+                            Complete a workout and
+                            record your sets to start
+                            tracking your progress.
                         </p>
 
                         <button
@@ -522,15 +613,10 @@ function ProgressTracking() {
                         >
                             Start a Workout
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
-
         );
-
     }
 
     // =====================================================
@@ -538,19 +624,16 @@ function ProgressTracking() {
     // =====================================================
 
     return (
-
-        <div style={styles.page}>
-
+        <div
+            className="wt-progress-page"
+            style={styles.page}
+        >
             <div style={styles.container}>
 
-                {/* =================================================
-                    HEADER
-                ================================================= */}
+                {/* HEADER */}
 
                 <div style={styles.header}>
-
                     <div>
-
                         <div style={styles.eyebrow}>
                             PERFORMANCE
                         </div>
@@ -560,10 +643,10 @@ function ProgressTracking() {
                         </h1>
 
                         <p style={styles.subtitle}>
-                            Track your exercise performance
-                            and training progress.
+                            Track your exercise
+                            performance and training
+                            progress.
                         </p>
-
                     </div>
 
                     <button
@@ -575,17 +658,12 @@ function ProgressTracking() {
                     >
                         ← Analytics
                     </button>
-
                 </div>
 
-                {/* =================================================
-                    EXERCISE SELECTOR
-                ================================================= */}
+                {/* EXERCISE SELECTOR */}
 
                 <div style={styles.selectorCard}>
-
                     <div>
-
                         <label
                             htmlFor="exerciseSelector"
                             style={styles.label}
@@ -597,7 +675,6 @@ function ProgressTracking() {
                             Choose an exercise to view
                             detailed progress.
                         </p>
-
                     </div>
 
                     <select
@@ -610,10 +687,8 @@ function ProgressTracking() {
                         }
                         style={styles.select}
                     >
-
                         {exercises.map(
                             (exercise) => (
-
                                 <option
                                     key={exercise.id}
                                     value={exercise.id}
@@ -623,73 +698,127 @@ function ProgressTracking() {
                                         ? ` — ${exercise.category}`
                                         : ""}
                                 </option>
-
                             )
                         )}
-
                     </select>
-
                 </div>
 
-                {/* =================================================
-                    SUMMARY CARDS
-                ================================================= */}
+                {/* TRACKING TYPE */}
+
+                <div style={styles.typeBanner}>
+                    <span style={styles.typeIcon}>
+                        {selectedExerciseType ===
+                        "TIME"
+                            ? "⏱️"
+                            : "💪"}
+                    </span>
+
+                    <div>
+                        <strong
+                            style={styles.typeTitle}
+                        >
+                            {selectedExerciseType ===
+                            "TIME"
+                                ? "Time-Based Exercise"
+                                : "Rep-Based Exercise"}
+                        </strong>
+
+                        <p
+                            style={styles.typeText}
+                        >
+                            {selectedExerciseType ===
+                            "TIME"
+                                ? "Progress is measured using duration. Weight, reps and volume are not used."
+                                : "Progress is measured using sets, reps, weight and training volume."}
+                        </p>
+                    </div>
+                </div>
+
+                {/* SUMMARY */}
 
                 <div style={styles.summaryGrid}>
 
                     <StatCard
                         icon="📋"
                         label="Recorded Sets"
-                        value={formatNumber(totalSets)}
+                        value={formatNumber(
+                            totalSets
+                        )}
                     />
 
-                    <StatCard
-                        icon="🔢"
-                        label="Total Reps"
-                        value={formatNumber(totalReps)}
-                    />
+                    {selectedExerciseType ===
+                    "TIME" ? (
+                        <>
+                            <StatCard
+                                icon="⏱️"
+                                label="Total Time"
+                                value={formatDuration(
+                                    totalTime
+                                )}
+                            />
 
-                    <StatCard
-                        icon="📦"
-                        label="Total Volume"
-                        value={formatNumber(totalVolume)}
-                        suffix=" kg"
-                    />
+                            <StatCard
+                                icon="🏆"
+                                label="Best Duration"
+                                value={formatDuration(
+                                    bestDuration
+                                )}
+                            />
 
-                    <StatCard
-                        icon="🏋️"
-                        label="Max Weight"
-                        value={formatNumber(maxWeight)}
-                        suffix=" kg"
-                    />
+                            <StatCard
+                                icon="📅"
+                                label="Workouts"
+                                value={formatNumber(
+                                    workoutPerformance.length
+                                )}
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <StatCard
+                                icon="🔢"
+                                label="Total Reps"
+                                value={formatNumber(
+                                    totalReps
+                                )}
+                            />
 
+                            <StatCard
+                                icon="📦"
+                                label="Total Volume"
+                                value={formatNumber(
+                                    totalVolume
+                                )}
+                                suffix=" kg"
+                            />
+
+                            <StatCard
+                                icon="🏋️"
+                                label="Max Weight"
+                                value={formatNumber(
+                                    maxWeight
+                                )}
+                                suffix=" kg"
+                            />
+                        </>
+                    )}
                 </div>
 
-                {/* =================================================
-                    LATEST VS PREVIOUS
-                ================================================= */}
+                {/* LATEST PERFORMANCE */}
 
                 <section style={styles.section}>
-
                     <div style={styles.sectionHeader}>
+                        <h2 style={styles.sectionTitle}>
+                            Latest Performance
+                        </h2>
 
-                        <div>
-
-                            <h2 style={styles.sectionTitle}>
-                                Latest Performance
-                            </h2>
-
-                            <p style={styles.sectionSubtitle}>
-                                Latest workout compared with
-                                the previous workout.
-                            </p>
-
-                        </div>
-
+                        <p style={styles.sectionSubtitle}>
+                            Latest workout compared
+                            with the previous workout.
+                        </p>
                     </div>
 
                     {latestWorkout ? (
-
                         <div style={styles.comparisonGrid}>
 
                             <ComparisonCard
@@ -712,121 +841,153 @@ function ProgressTracking() {
                                 }
                             />
 
-                            <ComparisonCard
-                                label="Reps"
-                                latest={
-                                    latestWorkout.reps
-                                }
-                                previous={
-                                    previousWorkout?.reps
-                                }
-                                suffix=""
-                                formatNumber={
-                                    formatNumber
-                                }
-                                getDifference={
-                                    getDifference
-                                }
-                                formatDifference={
-                                    formatDifference
-                                }
-                            />
+                            {selectedExerciseType ===
+                            "TIME" ? (
+                                <>
+                                    <ComparisonCard
+                                        label="Best Duration"
+                                        latest={
+                                            latestWorkout.bestDuration
+                                        }
+                                        previous={
+                                            previousWorkout?.bestDuration
+                                        }
+                                        suffix=""
+                                        customFormatter={
+                                            formatDuration
+                                        }
+                                        getDifference={
+                                            getDifference
+                                        }
+                                        formatDifference={
+                                            formatDifference
+                                        }
+                                    />
 
-                            <ComparisonCard
-                                label="Volume"
-                                latest={
-                                    latestWorkout.volume
-                                }
-                                previous={
-                                    previousWorkout?.volume
-                                }
-                                suffix=" kg"
-                                formatNumber={
-                                    formatNumber
-                                }
-                                getDifference={
-                                    getDifference
-                                }
-                                formatDifference={
-                                    formatDifference
-                                }
-                            />
+                                    <ComparisonCard
+                                        label="Total Time"
+                                        latest={
+                                            latestWorkout.durationSeconds
+                                        }
+                                        previous={
+                                            previousWorkout?.durationSeconds
+                                        }
+                                        suffix=""
+                                        customFormatter={
+                                            formatDuration
+                                        }
+                                        getDifference={
+                                            getDifference
+                                        }
+                                        formatDifference={
+                                            formatDifference
+                                        }
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <ComparisonCard
+                                        label="Reps"
+                                        latest={
+                                            latestWorkout.reps
+                                        }
+                                        previous={
+                                            previousWorkout?.reps
+                                        }
+                                        suffix=""
+                                        formatNumber={
+                                            formatNumber
+                                        }
+                                        getDifference={
+                                            getDifference
+                                        }
+                                        formatDifference={
+                                            formatDifference
+                                        }
+                                    />
 
-                            <ComparisonCard
-                                label="Max Weight"
-                                latest={
-                                    latestWorkout.maxWeight
-                                }
-                                previous={
-                                    previousWorkout?.maxWeight
-                                }
-                                suffix=" kg"
-                                formatNumber={
-                                    formatNumber
-                                }
-                                getDifference={
-                                    getDifference
-                                }
-                                formatDifference={
-                                    formatDifference
-                                }
-                            />
+                                    <ComparisonCard
+                                        label="Volume"
+                                        latest={
+                                            latestWorkout.volume
+                                        }
+                                        previous={
+                                            previousWorkout?.volume
+                                        }
+                                        suffix=" kg"
+                                        formatNumber={
+                                            formatNumber
+                                        }
+                                        getDifference={
+                                            getDifference
+                                        }
+                                        formatDifference={
+                                            formatDifference
+                                        }
+                                    />
 
+                                    <ComparisonCard
+                                        label="Max Weight"
+                                        latest={
+                                            latestWorkout.maxWeight
+                                        }
+                                        previous={
+                                            previousWorkout?.maxWeight
+                                        }
+                                        suffix=" kg"
+                                        formatNumber={
+                                            formatNumber
+                                        }
+                                        getDifference={
+                                            getDifference
+                                        }
+                                        formatDifference={
+                                            formatDifference
+                                        }
+                                    />
+                                </>
+                            )}
                         </div>
-
                     ) : (
-
                         <div style={styles.emptySmall}>
                             No performance data available.
                         </div>
-
                     )}
-
                 </section>
 
-                {/* =================================================
-                    PERFORMANCE HISTORY
-                ================================================= */}
+                {/* PERFORMANCE HISTORY */}
 
                 <section style={styles.section}>
-
                     <div style={styles.sectionHeader}>
+                        <h2 style={styles.sectionTitle}>
+                            Performance History
+                        </h2>
 
-                        <div>
-
-                            <h2 style={styles.sectionTitle}>
-                                Performance History
-                            </h2>
-
-                            <p style={styles.sectionSubtitle}>
-                                Workout-by-workout performance
-                                for the selected exercise.
-                            </p>
-
-                        </div>
-
+                        <p style={styles.sectionSubtitle}>
+                            Workout-by-workout
+                            performance for the
+                            selected exercise.
+                        </p>
                     </div>
 
-                    {workoutPerformance.length === 0 ? (
-
+                    {workoutPerformance.length ===
+                    0 ? (
                         <div style={styles.emptySmall}>
-                            No recorded sets for this exercise.
+                            No recorded sets for this
+                            exercise.
                         </div>
-
                     ) : (
-
                         <div style={styles.tableCard}>
-
-                            <div style={styles.tableWrapper}>
-
+                            <div
+                                style={
+                                    styles.tableWrapper
+                                }
+                            >
                                 <table
                                     style={styles.table}
                                 >
-
                                     <thead>
-
                                         <tr>
-
                                             <th
                                                 style={
                                                     styles.th
@@ -843,36 +1004,56 @@ function ProgressTracking() {
                                                 Sets
                                             </th>
 
-                                            <th
-                                                style={
-                                                    styles.th
-                                                }
-                                            >
-                                                Reps
-                                            </th>
+                                            {selectedExerciseType ===
+                                            "TIME" ? (
+                                                <>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Best Duration
+                                                    </th>
 
-                                            <th
-                                                style={
-                                                    styles.th
-                                                }
-                                            >
-                                                Volume
-                                            </th>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Total Time
+                                                    </th>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Reps
+                                                    </th>
 
-                                            <th
-                                                style={
-                                                    styles.th
-                                                }
-                                            >
-                                                Max Weight
-                                            </th>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Volume
+                                                    </th>
 
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Max Weight
+                                                    </th>
+                                                </>
+                                            )}
                                         </tr>
-
                                     </thead>
 
                                     <tbody>
-
                                         {workoutPerformance
                                             .slice()
                                             .reverse()
@@ -881,24 +1062,20 @@ function ProgressTracking() {
                                                     workout,
                                                     index
                                                 ) => (
-
                                                     <tr
                                                         key={
                                                             workout.workoutId ||
                                                             `${workout.workoutDate}-${index}`
                                                         }
                                                     >
-
                                                         <td
                                                             style={
                                                                 styles.td
                                                             }
                                                         >
-                                                            {
-                                                                formatDate(
-                                                                    workout.workoutDate
-                                                                )
-                                                            }
+                                                            {formatDate(
+                                                                workout.workoutDate
+                                                            )}
                                                         </td>
 
                                                         <td
@@ -906,141 +1083,184 @@ function ProgressTracking() {
                                                                 styles.td
                                                             }
                                                         >
-                                                            {
-                                                                formatNumber(
-                                                                    workout.sets
-                                                                )
-                                                            }
+                                                            {formatNumber(
+                                                                workout.sets
+                                                            )}
                                                         </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                formatNumber(
-                                                                    workout.reps
-                                                                )
-                                                            }
-                                                        </td>
+                                                        {selectedExerciseType ===
+                                                        "TIME" ? (
+                                                            <>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatDuration(
+                                                                        workout.bestDuration
+                                                                    )}
+                                                                </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                formatNumber(
-                                                                    workout.volume
-                                                                )
-                                                            }{" "}
-                                                            kg
-                                                        </td>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatDuration(
+                                                                        workout.durationSeconds
+                                                                    )}
+                                                                </td>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatNumber(
+                                                                        workout.reps
+                                                                    )}
+                                                                </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                formatNumber(
-                                                                    workout.maxWeight
-                                                                )
-                                                            }{" "}
-                                                            kg
-                                                        </td>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatNumber(
+                                                                        workout.volume
+                                                                    )}{" "}
+                                                                    kg
+                                                                </td>
 
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatNumber(
+                                                                        workout.maxWeight
+                                                                    )}{" "}
+                                                                    kg
+                                                                </td>
+                                                            </>
+                                                        )}
                                                     </tr>
-
                                                 )
                                             )}
-
                                     </tbody>
-
                                 </table>
-
                             </div>
-
                         </div>
-
                     )}
-
                 </section>
 
-                {/* =================================================
-                    SET HISTORY
-                ================================================= */}
+                {/* SET HISTORY */}
 
                 <section style={styles.section}>
-
                     <div style={styles.sectionHeader}>
+                        <h2 style={styles.sectionTitle}>
+                            Set History
+                        </h2>
 
-                        <div>
-
-                            <h2 style={styles.sectionTitle}>
-                                Set History
-                            </h2>
-
-                            <p style={styles.sectionSubtitle}>
-                                Every recorded set for the
-                                selected exercise.
-                            </p>
-
-                        </div>
-
+                        <p style={styles.sectionSubtitle}>
+                            Every recorded set for the
+                            selected exercise.
+                        </p>
                     </div>
 
-                    {selectedSets.length === 0 ? (
-
+                    {selectedSets.length ===
+                    0 ? (
                         <div style={styles.emptySmall}>
                             No sets recorded.
                         </div>
-
                     ) : (
-
                         <div style={styles.tableCard}>
-
-                            <div style={styles.tableWrapper}>
-
+                            <div
+                                style={
+                                    styles.tableWrapper
+                                }
+                            >
                                 <table
                                     style={styles.table}
                                 >
-
                                     <thead>
-
                                         <tr>
-
-                                            <th style={styles.th}>
+                                            <th
+                                                style={
+                                                    styles.th
+                                                }
+                                            >
                                                 Date
                                             </th>
 
-                                            <th style={styles.th}>
+                                            <th
+                                                style={
+                                                    styles.th
+                                                }
+                                            >
                                                 Set
                                             </th>
 
-                                            <th style={styles.th}>
-                                                Reps
-                                            </th>
+                                            {selectedExerciseType ===
+                                            "TIME" ? (
+                                                <>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Duration
+                                                    </th>
 
-                                            <th style={styles.th}>
-                                                Weight
-                                            </th>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Rest
+                                                    </th>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Reps
+                                                    </th>
 
-                                            <th style={styles.th}>
-                                                RPE
-                                            </th>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Weight
+                                                    </th>
 
-                                            <th style={styles.th}>
-                                                Volume
-                                            </th>
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        Volume
+                                                    </th>
 
+                                                    <th
+                                                        style={
+                                                            styles.th
+                                                        }
+                                                    >
+                                                        RPE
+                                                    </th>
+                                                </>
+                                            )}
                                         </tr>
-
                                     </thead>
 
                                     <tbody>
-
                                         {selectedSets
                                             .slice()
                                             .reverse()
@@ -1049,24 +1269,20 @@ function ProgressTracking() {
                                                     set,
                                                     index
                                                 ) => (
-
                                                     <tr
                                                         key={
                                                             set.id ||
                                                             `${set.workoutId}-${set.setNumber}-${index}`
                                                         }
                                                     >
-
                                                         <td
                                                             style={
                                                                 styles.td
                                                             }
                                                         >
-                                                            {
-                                                                formatDate(
-                                                                    set.workoutDate
-                                                                )
-                                                            }
+                                                            {formatDate(
+                                                                set.workoutDate
+                                                            )}
                                                         </td>
 
                                                         <td
@@ -1075,82 +1291,101 @@ function ProgressTracking() {
                                                             }
                                                         >
                                                             Set{" "}
-                                                            {
-                                                                set.setNumber ||
-                                                                index + 1
-                                                            }
+                                                            {set.setNumber ||
+                                                                index +
+                                                                1}
                                                         </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                formatNumber(
-                                                                    set.reps
-                                                                )
-                                                            }
-                                                        </td>
+                                                        {selectedExerciseType ===
+                                                        "TIME" ? (
+                                                            <>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    <span
+                                                                        style={
+                                                                            styles.timeBadge
+                                                                        }
+                                                                    >
+                                                                        ⏱️{" "}
+                                                                        {formatDuration(
+                                                                            set.durationSeconds
+                                                                        )}
+                                                                    </span>
+                                                                </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                formatNumber(
-                                                                    set.weight
-                                                                )
-                                                            }{" "}
-                                                            kg
-                                                        </td>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {set.restSeconds !==
+                                                                    undefined &&
+                                                                    set.restSeconds !==
+                                                                    null
+                                                                        ? formatDuration(
+                                                                            set.restSeconds
+                                                                        )
+                                                                        : "-"}
+                                                                </td>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatNumber(
+                                                                        set.reps
+                                                                    )}
+                                                                </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                set.rpe ??
-                                                                "-"
-                                                            }
-                                                        </td>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatNumber(
+                                                                        set.weight
+                                                                    )}{" "}
+                                                                    kg
+                                                                </td>
 
-                                                        <td
-                                                            style={
-                                                                styles.td
-                                                            }
-                                                        >
-                                                            {
-                                                                formatNumber(
-                                                                    set.volume
-                                                                )
-                                                            }{" "}
-                                                            kg
-                                                        </td>
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {formatNumber(
+                                                                        set.volume
+                                                                    )}{" "}
+                                                                    kg
+                                                                </td>
 
+                                                                <td
+                                                                    style={
+                                                                        styles.td
+                                                                    }
+                                                                >
+                                                                    {set.rpe ??
+                                                                        "-"}
+                                                                </td>
+                                                            </>
+                                                        )}
                                                     </tr>
-
                                                 )
                                             )}
-
                                     </tbody>
-
                                 </table>
-
                             </div>
-
                         </div>
-
                     )}
-
                 </section>
-
             </div>
-
         </div>
-
     );
 }
 
@@ -1164,17 +1399,13 @@ function StatCard({
     value,
     suffix = ""
 }) {
-
     return (
-
         <div style={styles.statCard}>
-
             <div style={styles.statIcon}>
                 {icon}
             </div>
 
             <div style={styles.statContent}>
-
                 <span style={styles.statLabel}>
                     {label}
                 </span>
@@ -1183,11 +1414,8 @@ function StatCard({
                     {value}
                     {suffix}
                 </strong>
-
             </div>
-
         </div>
-
     );
 }
 
@@ -1199,11 +1427,15 @@ function ComparisonCard({
     label,
     latest,
     previous,
-    suffix,
+    suffix = "",
     formatNumber,
+    customFormatter,
     getDifference,
     formatDifference
 }) {
+    const formatter =
+        customFormatter ||
+        formatNumber;
 
     const difference =
         previous === undefined
@@ -1214,20 +1446,17 @@ function ComparisonCard({
             );
 
     return (
-
         <div style={styles.comparisonCard}>
-
             <span style={styles.comparisonLabel}>
                 {label}
             </span>
 
             <strong style={styles.comparisonValue}>
-                {formatNumber(latest)}
+                {formatter(latest)}
                 {suffix}
             </strong>
 
             {previous !== undefined ? (
-
                 <span
                     style={{
                         ...styles.difference,
@@ -1239,20 +1468,28 @@ function ComparisonCard({
                                     : "var(--wt-text-muted)"
                     }}
                 >
-                    {formatDifference(difference)}
-                    {suffix}
+                    {customFormatter
+                        ? difference > 0
+                            ? `+${customFormatter(
+                                difference
+                            )}`
+                            : customFormatter(
+                                difference
+                            )
+                        : formatDifference(
+                            difference
+                        )}
                 </span>
-
             ) : (
-
-                <span style={styles.noPrevious}>
+                <span
+                    style={
+                        styles.noPrevious
+                    }
+                >
                     First recorded workout
                 </span>
-
             )}
-
         </div>
-
     );
 }
 
@@ -1261,7 +1498,6 @@ function ComparisonCard({
 // =====================================================
 
 const styles = {
-
     page: {
         minHeight: "100vh",
         background:
@@ -1275,10 +1511,6 @@ const styles = {
         maxWidth: "1200px",
         margin: "0 auto"
     },
-
-    // =================================================
-    // HEADER
-    // =================================================
 
     header: {
         display: "flex",
@@ -1314,10 +1546,6 @@ const styles = {
         fontSize: "16px"
     },
 
-    // =================================================
-    // SELECTOR
-    // =================================================
-
     selectorCard: {
         display: "flex",
         justifyContent: "space-between",
@@ -1330,7 +1558,7 @@ const styles = {
             "1px solid var(--wt-border)",
         borderRadius: "18px",
         padding: "20px",
-        marginBottom: "22px",
+        marginBottom: "18px",
         boxShadow:
             "var(--wt-shadow)"
     },
@@ -1367,14 +1595,41 @@ const styles = {
         outline: "none"
     },
 
-    // =================================================
-    // SUMMARY
-    // =================================================
+    typeBanner: {
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+        padding: "16px 20px",
+        marginBottom: "22px",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "15px"
+    },
+
+    typeIcon: {
+        fontSize: "26px"
+    },
+
+    typeTitle: {
+        display: "block",
+        color:
+            "var(--wt-text-primary)",
+        fontSize: "14px"
+    },
+
+    typeText: {
+        margin: "4px 0 0",
+        color:
+            "var(--wt-text-secondary)",
+        fontSize: "12px"
+    },
 
     summaryGrid: {
         display: "grid",
         gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
+            "repeat(auto-fit, minmax(210px, 1fr))",
         gap: "18px"
     },
 
@@ -1425,10 +1680,6 @@ const styles = {
         fontWeight: "800"
     },
 
-    // =================================================
-    // SECTION
-    // =================================================
-
     section: {
         marginTop: "40px"
     },
@@ -1451,10 +1702,6 @@ const styles = {
             "var(--wt-text-secondary)",
         fontSize: "14px"
     },
-
-    // =================================================
-    // COMPARISON
-    // =================================================
 
     comparisonGrid: {
         display: "grid",
@@ -1506,10 +1753,6 @@ const styles = {
         fontSize: "12px"
     },
 
-    // =================================================
-    // TABLE
-    // =================================================
-
     tableCard: {
         backgroundColor:
             "var(--wt-surface)",
@@ -1556,9 +1799,17 @@ const styles = {
         whiteSpace: "nowrap"
     },
 
-    // =================================================
-    // EMPTY
-    // =================================================
+    timeBadge: {
+        display: "inline-block",
+        padding: "6px 10px",
+        borderRadius: "20px",
+        backgroundColor:
+            "rgba(37, 99, 235, 0.12)",
+        color:
+            "var(--wt-accent)",
+        fontWeight: "700",
+        fontSize: "12px"
+    },
 
     emptyCard: {
         backgroundColor:
@@ -1602,10 +1853,6 @@ const styles = {
             "var(--wt-text-secondary)"
     },
 
-    // =================================================
-    // BUTTONS
-    // =================================================
-
     primaryButton: {
         border:
             "1px solid var(--wt-border)",
@@ -1631,10 +1878,6 @@ const styles = {
         cursor: "pointer",
         fontWeight: "700"
     },
-
-    // =================================================
-    // CENTER
-    // =================================================
 
     center: {
         minHeight: "70vh",

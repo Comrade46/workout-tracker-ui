@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
@@ -18,6 +17,60 @@ function WorkoutHistory() {
     }, []);
 
     // =====================================================
+    // GET SESSION SORT DATE
+    // Latest workout should always appear first.
+    // =====================================================
+
+    const getSessionTimestamp = (session) => {
+        const possibleDates = [
+            session?.createdAt,
+            session?.workoutDateTime,
+            session?.workoutDate,
+            session?.date,
+            session?.sessionDate
+        ];
+
+        for (const value of possibleDates) {
+            if (!value) {
+                continue;
+            }
+
+            const timestamp = new Date(value).getTime();
+
+            if (Number.isFinite(timestamp)) {
+                return timestamp;
+            }
+        }
+
+        return 0;
+    };
+
+    // =====================================================
+    // SORT SESSIONS
+    // Newest / latest workout first.
+    // If dates are equal, newer ID comes first.
+    // =====================================================
+
+    const sortSessionsLatestFirst = (sessionList) => {
+        return [...sessionList].sort((a, b) => {
+            const timestampA =
+                getSessionTimestamp(a);
+
+            const timestampB =
+                getSessionTimestamp(b);
+
+            if (timestampA !== timestampB) {
+                return timestampB - timestampA;
+            }
+
+            return (
+                Number(b?.id || 0) -
+                Number(a?.id || 0)
+            );
+        });
+    };
+
+    // =====================================================
     // LOAD WORKOUT HISTORY
     // =====================================================
 
@@ -34,11 +87,17 @@ function WorkoutHistory() {
                 response.data
             );
 
-            setSessions(
+            const workoutSessions =
                 Array.isArray(response.data)
                     ? response.data
-                    : []
-            );
+                    : [];
+
+            const sortedSessions =
+                sortSessionsLatestFirst(
+                    workoutSessions
+                );
+
+            setSessions(sortedSessions);
         } catch (requestError) {
             console.error(
                 "Error loading workout history:",
@@ -127,12 +186,50 @@ function WorkoutHistory() {
     };
 
     // =====================================================
+    // FORMAT TIME
+    // =====================================================
+
+    const formatDuration = (seconds) => {
+        const totalSeconds = Number(seconds || 0);
+
+        if (totalSeconds <= 0) {
+            return "0 sec";
+        }
+
+        const minutes =
+            Math.floor(totalSeconds / 60);
+
+        const remainingSeconds =
+            totalSeconds % 60;
+
+        if (minutes > 0) {
+            return `${minutes} min ${remainingSeconds} sec`;
+        }
+
+        return `${remainingSeconds} sec`;
+    };
+
+    // =====================================================
+    // CHECK TIME-BASED SET
+    // =====================================================
+
+    const isTimeBasedSet = (set) => {
+        return (
+            Number(set?.durationSeconds || 0) >
+            0
+        );
+    };
+
+    // =====================================================
     // LOADING
     // =====================================================
 
     if (loading) {
         return (
-            <div className="wt-workout-history-page" style={styles.center}>
+            <div
+                className="wt-workout-history-page"
+                style={styles.center}
+            >
                 <div style={styles.loadingIcon}>
                     🏋️
                 </div>
@@ -183,7 +280,10 @@ function WorkoutHistory() {
     // =====================================================
 
     return (
-        <div className="wt-workout-history-page" style={styles.page}>
+        <div
+            className="wt-workout-history-page"
+            style={styles.page}
+        >
             <div style={styles.container}>
 
                 {/* HEADER */}
@@ -557,90 +657,120 @@ function WorkoutHistory() {
                                         (
                                             set,
                                             index
-                                        ) => (
-                                            <div
-                                                key={
-                                                    set.id ||
-                                                    index
-                                                }
-                                                style={
-                                                    styles.setCard
-                                                }
-                                            >
+                                        ) => {
+                                            const timeBased =
+                                                isTimeBasedSet(
+                                                    set
+                                                );
 
+                                            return (
                                                 <div
+                                                    key={
+                                                        set.id ||
+                                                        index
+                                                    }
                                                     style={
-                                                        styles.exerciseInfo
+                                                        styles.setCard
                                                     }
                                                 >
-                                                    <strong
+
+                                                    <div
                                                         style={
-                                                            styles.exerciseName
+                                                            styles.exerciseInfo
                                                         }
                                                     >
-                                                        {set.exerciseName ||
-                                                            "Unknown Exercise"}
-                                                    </strong>
+                                                        <strong
+                                                            style={
+                                                                styles.exerciseName
+                                                            }
+                                                        >
+                                                            {set.exerciseName ||
+                                                                "Unknown Exercise"}
+                                                        </strong>
 
-                                                    <span
+                                                        <span
+                                                            style={
+                                                                styles.category
+                                                            }
+                                                        >
+                                                            {set.category ||
+                                                                "General"}
+                                                        </span>
+                                                    </div>
+
+                                                    <div
                                                         style={
-                                                            styles.category
+                                                            styles.setInfo
                                                         }
                                                     >
-                                                        {set.category ||
-                                                            "General"}
-                                                    </span>
-                                                </div>
+                                                        <span
+                                                            style={
+                                                                styles.typeBadge
+                                                            }
+                                                        >
+                                                            {timeBased
+                                                                ? "TIME"
+                                                                : "REPS"}
+                                                        </span>
 
-                                                <div
-                                                    style={
-                                                        styles.setInfo
-                                                    }
-                                                >
-                                                    <span>
-                                                        <strong>
-                                                            Set
-                                                        </strong>{" "}
-                                                        {set.setNumber ??
-                                                            "-"}
-                                                    </span>
+                                                        <span>
+                                                            <strong>
+                                                                Set
+                                                            </strong>{" "}
+                                                            {set.setNumber ??
+                                                                "-"}
+                                                        </span>
 
-                                                    <span>
-                                                        <strong>
-                                                            Reps
-                                                        </strong>{" "}
-                                                        {set.reps ??
-                                                            0}
-                                                    </span>
+                                                        {timeBased ? (
+                                                            <span>
+                                                                <strong>
+                                                                    Duration
+                                                                </strong>{" "}
+                                                                {formatDuration(
+                                                                    set.durationSeconds
+                                                                )}
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <span>
+                                                                    <strong>
+                                                                        Reps
+                                                                    </strong>{" "}
+                                                                    {set.reps ??
+                                                                        0}
+                                                                </span>
 
-                                                    <span>
-                                                        <strong>
-                                                            Weight
-                                                        </strong>{" "}
-                                                        {set.weight ??
-                                                            0}{" "}
-                                                        kg
-                                                    </span>
+                                                                <span>
+                                                                    <strong>
+                                                                        Weight
+                                                                    </strong>{" "}
+                                                                    {set.weight ??
+                                                                        0}{" "}
+                                                                    kg
+                                                                </span>
 
-                                                    <span>
-                                                        <strong>
-                                                            RPE
-                                                        </strong>{" "}
-                                                        {set.rpe ??
-                                                            "-"}
-                                                    </span>
+                                                                <span>
+                                                                    <strong>
+                                                                        RPE
+                                                                    </strong>{" "}
+                                                                    {set.rpe ??
+                                                                        "-"}
+                                                                </span>
 
-                                                    <span>
-                                                        <strong>
-                                                            Volume
-                                                        </strong>{" "}
-                                                        {formatVolume(
-                                                            set.volume
+                                                                <span>
+                                                                    <strong>
+                                                                        Volume
+                                                                    </strong>{" "}
+                                                                    {formatVolume(
+                                                                        set.volume
+                                                                    )}
+                                                                </span>
+                                                            </>
                                                         )}
-                                                    </span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )
+                                            );
+                                        }
                                     )}
                                 </div>
                             ) : (
@@ -1069,7 +1199,20 @@ const styles = {
         color:
             "var(--wt-text-secondary)",
         fontSize: "13px",
-        flexWrap: "wrap"
+        flexWrap: "wrap",
+        alignItems: "center"
+    },
+
+    typeBadge: {
+        padding: "5px 9px",
+        borderRadius: "12px",
+        backgroundColor:
+            "var(--wt-accent-soft, #dbeafe)",
+        color:
+            "var(--wt-accent)",
+        fontSize: "11px",
+        fontWeight: "800",
+        letterSpacing: "0.5px"
     },
 
     noSets: {
@@ -1114,4 +1257,3 @@ const styles = {
 };
 
 export default WorkoutHistory;
-

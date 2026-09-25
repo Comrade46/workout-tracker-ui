@@ -29,7 +29,18 @@ const Register = () => {
       }, 2000);
       
     } catch (err) {
-      setError('Registration failed. Username or email might already be taken.');
+      // Backend sends 409 for duplicates and 400 with field messages for validation
+      const data = err.response?.data;
+      const validationMessages = data?.validationErrors
+        ? Object.values(data.validationErrors).join(' ')
+        : '';
+
+      setError(
+        validationMessages ||
+        data?.message ||
+        err.userMessage ||
+        'Registration failed. Please try again.'
+      );
       setSuccess(false);
     }
   };
