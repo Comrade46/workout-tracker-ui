@@ -10,6 +10,26 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.2.1
+
+**Date:** 2026-09-25
+**Deployment status:** Pending (built and tested locally, not yet pushed to Render)
+
+Fixes from the first test on a phone.
+
+### Bug fixes
+
+- Workout player showed a reps form for timed exercises (Plank) and a timer for rep exercises (e.g. Russian Twists, Push-Ups). TIME / REPS now always comes from the exercise in the Exercise Library; plan rows saved earlier with no type or the wrong type are corrected automatically
+- Plan editor: TIME / REPS is filled in from the exercise and can no longer be set to the wrong type
+- Plan editor: "Full Body" and "Upper / Lower Body" plans showed "No exercises found" and hid the plan's exercises; categories now match correctly (Full Body = all exercises) and a plan's existing exercises always show
+
+### Performance
+
+- API responses 2-4x faster: related data loaded in batches instead of one query per row, analytics loads each set once, and the logged-in user is cached for a few minutes instead of being read from the database on every request
+- First app start downloads less: pages load when opened (main bundle 440 KB -> 315 KB)
+
+---
+
 ## 1.2.0
 
 **Date:** 2026-09-25

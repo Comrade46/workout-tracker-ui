@@ -59,6 +59,11 @@ function categoryMatches(
         return false;
     }
 
+    // A full body plan can use every exercise.
+    if (selected === "full body") {
+        return true;
+    }
+
     if (
         selected === "core/abs" ||
         selected === "core abs" ||
@@ -73,17 +78,36 @@ function categoryMatches(
     }
 
     if (selected === "upper body") {
-        return (
-            exercise === "upper body" ||
-            exercise === "upper"
-        );
+        return [
+            "upper body",
+            "upper",
+            "chest",
+            "back",
+            "shoulders",
+            "arms"
+        ].includes(exercise);
     }
 
     if (selected === "lower body") {
-        return (
-            exercise === "lower body" ||
-            exercise === "lower"
-        );
+        return [
+            "lower body",
+            "lower",
+            "legs",
+            "leg",
+            "glutes"
+        ].includes(exercise);
+    }
+
+    if (selected === "legs") {
+        return exercise === "legs" || exercise === "leg";
+    }
+
+    if (selected === "hiit") {
+        return [
+            "hiit",
+            "cardio",
+            "full body"
+        ].includes(exercise);
     }
 
     return exercise === selected;
@@ -191,6 +215,37 @@ function WorkoutPlans() {
         );
 
     }, [exercises, planForm.category]);
+
+    /*
+     * Options for one exercise row: the category's exercises, plus the
+     * row's current exercise if it is outside the category, so editing
+     * a plan never hides or changes its existing exercises.
+     */
+    const rowOptions = (row) => {
+
+        const alreadyListed =
+            !row.exerciseId ||
+            filteredExercises.some(
+                (exercise) =>
+                    String(exercise.id) ===
+                    String(row.exerciseId)
+            );
+
+        if (alreadyListed) {
+            return filteredExercises;
+        }
+
+        const selected =
+            exercises.find(
+                (exercise) =>
+                    String(exercise.id) ===
+                    String(row.exerciseId)
+            );
+
+        return selected
+            ? [selected, ...filteredExercises]
+            : filteredExercises;
+    };
 
     // =====================================================
     // OPEN CREATE
@@ -1434,7 +1489,7 @@ function WorkoutPlans() {
                                                         Select exercise
                                                     </option>
 
-                                                    {filteredExercises.map(
+                                                    {rowOptions(row).map(
                                                         (
                                                             exercise
                                                         ) => (
@@ -1457,24 +1512,23 @@ function WorkoutPlans() {
 
                                                 </select>
 
+                                                {/*
+                                                  * TIME / REPS comes from the exercise
+                                                  * (Exercise Library) and is filled in
+                                                  * when the exercise is chosen.
+                                                  */}
                                                 <select
                                                     value={
                                                         row.trackingType
                                                     }
-                                                    onChange={(
-                                                        event
-                                                    ) =>
-                                                        updateExerciseRow(
-                                                            index,
-                                                            "trackingType",
-                                                            event
-                                                                .target
-                                                                .value
-                                                        )
-                                                    }
-                                                    style={
-                                                        styles.smallSelect
-                                                    }
+                                                    disabled
+                                                    title="Set by the exercise. Change it in the Exercise Library."
+                                                    aria-label="Tracked by (set by the exercise)"
+                                                    style={{
+                                                        ...styles.smallSelect,
+                                                        cursor: "default",
+                                                        opacity: 0.85
+                                                    }}
                                                 >
 
                                                     <option value="REPS">

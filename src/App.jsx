@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
     BrowserRouter as Router,
     Routes,
@@ -10,17 +10,42 @@ import {
 
 import Login from "./components/Login";
 import Register from "./components/Register";
-import Dashboard from "./components/Dashboard";
-import Workouts from "./components/Workouts";
-import WorkoutPlans from "./components/WorkoutPlans";
-import WorkoutPlayer from "./components/WorkoutPlayer";
-import Analytics from "./components/Analytics";
-import ProgressTracking from "./components/ProgressTracking";
-import Exercises from "./components/Exercises";
 import Navbar from "./components/Navbar";
-import WorkoutHistory from "./components/WorkoutHistory";
 import ServerWakeIndicator from "./components/ServerWakeIndicator";
-import InstallPage from "./components/InstallPage";
+
+/*
+ * Pages are loaded when first opened, so the first start on a phone
+ * only downloads what the first screen needs. The service worker still
+ * caches every page for offline use after the first visit.
+ */
+const Dashboard = lazy(() => import("./components/Dashboard"));
+const Workouts = lazy(() => import("./components/Workouts"));
+const WorkoutPlans = lazy(() => import("./components/WorkoutPlans"));
+const WorkoutPlayer = lazy(() => import("./components/WorkoutPlayer"));
+const Analytics = lazy(() => import("./components/Analytics"));
+const ProgressTracking = lazy(() => import("./components/ProgressTracking"));
+const Exercises = lazy(() => import("./components/Exercises"));
+const WorkoutHistory = lazy(() => import("./components/WorkoutHistory"));
+const InstallPage = lazy(() => import("./components/InstallPage"));
+
+
+function PageLoading() {
+    return (
+        <div
+            role="status"
+            style={{
+                minHeight: "50vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--wt-text-muted)",
+                fontWeight: 600
+            }}
+        >
+            Loading…
+        </div>
+    );
+}
 
 
 function ProtectedRoute({ children }) {
@@ -110,6 +135,8 @@ function AppContent() {
 
             {/* Shown only while the backend is slow / waking up */}
             <ServerWakeIndicator />
+
+            <Suspense fallback={<PageLoading />}>
 
             <Routes>
 
@@ -273,6 +300,8 @@ function AppContent() {
                 />
 
             </Routes>
+
+            </Suspense>
 
         </>
 
