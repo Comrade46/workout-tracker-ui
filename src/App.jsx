@@ -18,7 +18,6 @@ import ProgressTracking from "./components/ProgressTracking";
 import Exercises from "./components/Exercises";
 import Navbar from "./components/Navbar";
 import WorkoutHistory from "./components/WorkoutHistory";
-import UpdateNotification from "./components/UpdateNotification";
 
 
 function ProtectedRoute({ children }) {
@@ -86,9 +85,6 @@ function AppContent() {
         <>
 
             <Navbar />
-
-            {/* Application Update Notification */}
-            <UpdateNotification />
 
             <Routes>
 

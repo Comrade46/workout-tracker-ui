@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ThemeToggle from "../theme/ThemeToggle";
+import PwaActions from "./PwaActions";
 import { APP_VERSION_LABEL } from "../config/appVersion";
 
 const navItems = [
@@ -420,6 +421,21 @@ function Navbar() {
                         }
                     }
 
+                    /*
+                     * On narrow phones, when the 📲 / 🔄 icons are showing,
+                     * make room by hiding the top-bar theme toggle.
+                     * It is still available inside the ☰ menu.
+                     */
+                    .wt-navbar-theme {
+                        display: inline-flex;
+                    }
+
+                    @media (max-width: 480px) {
+                        .wt-navbar-actions:has(.wt-pwa-actions) .wt-navbar-theme {
+                            display: none;
+                        }
+                    }
+
                     @media (max-width: 420px) {
                         .wt-navbar-inner {
                             padding-left: 10px;
@@ -483,7 +499,11 @@ function Navbar() {
                     </div>
 
                     <div className="wt-navbar-actions">
-                        <ThemeToggle />
+                        <PwaActions />
+
+                        <span className="wt-navbar-theme">
+                            <ThemeToggle />
+                        </span>
 
                         <button
                             type="button"
