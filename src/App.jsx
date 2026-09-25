@@ -18,6 +18,7 @@ import ProgressTracking from "./components/ProgressTracking";
 import Exercises from "./components/Exercises";
 import Navbar from "./components/Navbar";
 import WorkoutHistory from "./components/WorkoutHistory";
+import ServerWakeIndicator from "./components/ServerWakeIndicator";
 
 
 function ProtectedRoute({ children }) {
@@ -85,6 +86,9 @@ function AppContent() {
         <>
 
             <Navbar />
+
+            {/* Shown only while the backend is slow / waking up */}
+            <ServerWakeIndicator />
 
             <Routes>
 

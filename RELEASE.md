@@ -25,6 +25,7 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ### Bug fixes
 
+- Pages showed "Unable to load exercises / workout plans" when the Render backend was waking up from sleep (took 70-145 s, app gave up after 15 s). Requests now wait up to 3 minutes, page loads retry once, the server is pinged as soon as the app opens, and a small "Waking up the server…" indicator is shown while waiting
 - Push-ups and other rep exercises no longer show "30 seconds"
 - Logo, favicon and install icons were not loading (wrong file paths)
 - Workout Player text was invisible in dark mode

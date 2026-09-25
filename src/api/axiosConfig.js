@@ -1,9 +1,21 @@
 import axios from "axios";
+import { trackRequest } from "./serverStatus";
 
 
-const API_BASE_URL =
+export const API_BASE_URL =
     import.meta.env.VITE_API_URL ||
     "http://localhost:8080/api";
+
+
+/*
+ * The production backend (Render free plan) sleeps when idle and needs
+ * 1-2+ minutes to wake up. The old 15 second timeout made every page
+ * fail with "Unable to load ..." during that time.
+ */
+const REQUEST_TIMEOUT_MS = 180000;
+
+// Page loads (GET) are retried once after a dropped connection.
+const RETRY_DELAY_MS = 3000;
 
 
 const api = axios.create({
@@ -13,7 +25,7 @@ const api = axios.create({
         "Content-Type": "application/json"
     },
 
-    timeout: 15000
+    timeout: REQUEST_TIMEOUT_MS
 });
 
 
@@ -39,6 +51,9 @@ api.interceptors.request.use(
                 `Bearer ${token}`;
         }
 
+        // Shows the "waking up the server" indicator if this is slow.
+        config.finishTracking = trackRequest();
+
         return config;
     },
 
@@ -58,10 +73,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
 
     (response) => {
+        response.config.finishTracking?.();
+
         return response;
     },
 
-    (error) => {
+    async (error) => {
+
+        error.config?.finishTracking?.();
 
         /*
         |--------------------------------------------------------------------------
@@ -71,8 +90,30 @@ api.interceptors.response.use(
 
         if (!error.response) {
 
-            error.userMessage =
-                "Unable to connect to the server. Please make sure the backend is running.";
+            const config = error.config;
+
+            const timedOut =
+                error.code === "ECONNABORTED";
+
+            // Retry a page load once; never repeat saves/deletes automatically.
+            if (
+                config &&
+                !timedOut &&
+                !config.retried &&
+                (config.method || "get").toLowerCase() === "get"
+            ) {
+                config.retried = true;
+
+                await new Promise((resolve) =>
+                    setTimeout(resolve, RETRY_DELAY_MS)
+                );
+
+                return api(config);
+            }
+
+            error.userMessage = timedOut
+                ? "The server is taking too long to respond. Please try again in a minute."
+                : "Unable to connect to the server. Please check your internet connection and try again.";
 
             return Promise.reject(error);
         }

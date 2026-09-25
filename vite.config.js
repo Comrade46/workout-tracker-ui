@@ -17,6 +17,10 @@ function versionConsistencyCheck() {
     return {
         name: "workout-tracker-version-check",
 
+        // Only for `npm run build`: a mismatch while developing must not
+        // stop the dev server.
+        apply: "build",
+
         buildStart() {
             const read = (path) =>
                 readFileSync(new URL(path, import.meta.url), "utf-8");
