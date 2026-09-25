@@ -13,7 +13,7 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 ## 1.2.0
 
 **Date:** 2026-09-25
-**Deployment status:** Pending (built and tested locally, not yet pushed to Render)
+**Deployment status:** Deployed 2026-09-25 (frontend 132901f)
 
 Goal: friends can install and use the app for free, on any device, without an app store.
 
