@@ -13,7 +13,7 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 ## 1.1.0
 
 **Date:** 2026-09-25
-**Deployment status:** Pending (built and tested locally, not yet pushed to Render)
+**Deployment status:** Deployed 2026-09-25 (frontend 595aec2, backend 5b25c6c)
 
 ### New features
 
