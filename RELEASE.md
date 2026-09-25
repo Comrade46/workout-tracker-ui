@@ -13,7 +13,7 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 ## 1.2.1
 
 **Date:** 2026-09-25
-**Deployment status:** Pending (built and tested locally, not yet pushed to Render)
+**Deployment status:** Deployed 2026-09-25 (frontend 4c19d16, backend 40ccf93)
 
 Fixes from the first test on a phone.
 
