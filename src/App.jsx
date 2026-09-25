@@ -4,6 +4,7 @@ import {
     Routes,
     Route,
     Navigate,
+    useLocation,
     useNavigate
 } from "react-router-dom";
 
@@ -19,6 +20,7 @@ import Exercises from "./components/Exercises";
 import Navbar from "./components/Navbar";
 import WorkoutHistory from "./components/WorkoutHistory";
 import ServerWakeIndicator from "./components/ServerWakeIndicator";
+import InstallPage from "./components/InstallPage";
 
 
 function ProtectedRoute({ children }) {
@@ -35,6 +37,25 @@ function ProtectedRoute({ children }) {
     }
 
     return children;
+}
+
+
+/*
+ * "/" goes to the dashboard, except the shared install link "/?install"
+ * which opens the Get the app page.
+ */
+function RootRedirect() {
+    const location = useLocation();
+
+    const wantsInstall =
+        new URLSearchParams(location.search).has("install");
+
+    return (
+        <Navigate
+            to={wantsInstall ? "/install" : "/dashboard"}
+            replace
+        />
+    );
 }
 
 
@@ -111,6 +132,17 @@ function AppContent() {
                 <Route
                     path="/register"
                     element={<Register />}
+                />
+
+                {/* Public "Get the app" page */}
+                <Route
+                    path="/install"
+                    element={<InstallPage />}
+                />
+
+                <Route
+                    path="/"
+                    element={<RootRedirect />}
                 />
 
 

@@ -66,10 +66,15 @@ export default defineConfig({
             includeAssets: [
                 "favicon.png",
                 "icons/icon-192.png",
-                "icons/icon-512.png"
+                "icons/icon-512.png",
+                "icons/icon-maskable-512.png",
+                "icons/apple-touch-icon.png"
             ],
 
             manifest: {
+                // Stable app identity (same as the start URL)
+                id: "/",
+
                 name: "Workout Tracker",
                 short_name: "Workout Tracker",
 
@@ -85,6 +90,8 @@ export default defineConfig({
                 start_url: "/",
                 scope: "/",
 
+                categories: ["health", "fitness", "lifestyle"],
+
                 icons: [
                     {
                         src: "/icons/icon-192.png",
@@ -99,7 +106,9 @@ export default defineConfig({
                         purpose: "any"
                     },
                     {
-                        src: "/icons/icon-512.png",
+                        // Logo shrunk into the safe zone so Android's
+                        // round / squircle mask never cuts it off
+                        src: "/icons/icon-maskable-512.png",
                         sizes: "512x512",
                         type: "image/png",
                         purpose: "maskable"

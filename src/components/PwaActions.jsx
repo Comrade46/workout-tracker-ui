@@ -1,5 +1,7 @@
+import { useState } from "react";
 import usePwa from "../pwa/usePwa";
 import { applyUpdate, promptInstall } from "../pwa/pwaManager";
+import InstallGuideDialog from "./InstallGuideDialog";
 
 // Compact 📲 Install / 🔄 Update icons for the Navbar.
 // Each icon only appears when that action is actually available.
@@ -7,12 +9,27 @@ function PwaActions() {
     const {
         canInstall,
         isInstalled,
+        platform,
+        needsManualInstall,
         updateAvailable,
         latestVersion,
         updating
     } = usePwa();
 
-    const showInstall = canInstall && !isInstalled;
+    const [guideOpen, setGuideOpen] = useState(false);
+
+    // One-tap install where supported, otherwise a how-to guide
+    // (iPhone, Safari, Firefox never offer one-tap install).
+    const showInstall =
+        !isInstalled && (canInstall || needsManualInstall);
+
+    const handleInstallClick = () => {
+        if (canInstall) {
+            promptInstall();
+        } else {
+            setGuideOpen(true);
+        }
+    };
 
     if (!showInstall && !updateAvailable) {
         return null;
@@ -138,7 +155,7 @@ function PwaActions() {
                     <button
                         type="button"
                         className="wt-pwa-button"
-                        onClick={promptInstall}
+                        onClick={handleInstallClick}
                         title="Install Workout Tracker"
                         aria-label="Install Workout Tracker app"
                     >
@@ -163,6 +180,13 @@ function PwaActions() {
                     </button>
                 )}
             </div>
+
+            {guideOpen && (
+                <InstallGuideDialog
+                    platform={platform}
+                    onClose={() => setGuideOpen(false)}
+                />
+            )}
         </>
     );
 }

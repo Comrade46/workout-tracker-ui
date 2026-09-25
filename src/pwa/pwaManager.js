@@ -19,6 +19,11 @@ const UPDATE_WAIT_TIMEOUT_MS = 15 * 1000;
 let state = {
     canInstall: false,
     isInstalled: false,
+    // Which install instructions fit this device (see detectPlatform)
+    platform: "desktop-chromium",
+    // True for browsers that never offer one-tap install (iPhone, Safari,
+    // Firefox): the 📲 icon then opens a short how-to guide instead.
+    needsManualInstall: false,
     updateAvailable: false,
     latestVersion: null,
     updating: false
@@ -57,6 +62,51 @@ function isRunningStandalone() {
         window.navigator.standalone === true
     );
 }
+
+// ------------------------------------------
+// Device / browser detection for install instructions
+// ------------------------------------------
+
+export function detectPlatform() {
+    // Development only: preview another device's install guide,
+    // e.g. http://localhost:5173/install?platform=ios
+    if (import.meta.env.DEV) {
+        const forced =
+            new URLSearchParams(window.location.search).get("platform");
+
+        if (forced) return forced;
+    }
+
+    const ua = navigator.userAgent || "";
+
+    const isIOS =
+        /iPad|iPhone|iPod/.test(ua) ||
+        // iPadOS reports itself as a Mac
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+    const isAndroid = /Android/i.test(ua);
+    const isFirefox = /Firefox|FxiOS/i.test(ua);
+    const isSamsung = /SamsungBrowser/i.test(ua);
+    const isChromium = /Chrome|Chromium|CriOS|Edg\/|OPR\//i.test(ua);
+    const isMac = /Macintosh/i.test(ua);
+
+    if (isIOS) return "ios";
+    if (isAndroid && isFirefox) return "android-firefox";
+    if (isAndroid && isSamsung) return "android-samsung";
+    if (isAndroid) return "android-chrome";
+    if (isMac && !isChromium && !isFirefox) return "mac-safari";
+    if (isFirefox) return "desktop-firefox";
+
+    return "desktop-chromium";
+}
+
+// Browsers that never fire beforeinstallprompt
+const MANUAL_INSTALL_PLATFORMS = [
+    "ios",
+    "android-firefox",
+    "mac-safari",
+    "desktop-firefox"
+];
 
 // ------------------------------------------
 // Remote version check
@@ -103,7 +153,13 @@ export function initPwa() {
 
     initialized = true;
 
-    setState({ isInstalled: isRunningStandalone() });
+    const platform = detectPlatform();
+
+    setState({
+        isInstalled: isRunningStandalone(),
+        platform,
+        needsManualInstall: MANUAL_INSTALL_PLATFORMS.includes(platform)
+    });
 
     // Chrome / Edge / Android fire this when the app can be installed.
     window.addEventListener("beforeinstallprompt", (event) => {

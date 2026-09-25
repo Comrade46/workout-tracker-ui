@@ -10,6 +10,29 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.2.0
+
+**Date:** 2026-09-25
+**Deployment status:** Pending (built and tested locally, not yet pushed to Render)
+
+Goal: friends can install and use the app for free, on any device, without an app store.
+
+### New features
+
+- **Get the app page** (`/install`, public, no login): install steps for the visitor's device, one-tap install where the browser supports it, QR code, and a "Share link" button (WhatsApp etc.)
+- Share link `https://workout-tracker-ui-g065.onrender.com/?install` opens the Get the app page
+- 📲 in the Navbar now also works on iPhone / iPad, Mac Safari and Firefox: it opens a short "how to install" guide for that device
+- "📲 Get the app" link on the Login and Register pages
+- iPhone / iPad: proper 180 px home-screen icon, opens full-screen like an app
+- Android: padded "maskable" icon so the round launcher mask no longer cuts the logo
+- Free keep-awake job (GitHub Actions, every 5 minutes) so the backend no longer sleeps and friends don't wait 1-2 minutes
+
+### Deployment notes
+
+- GitHub Actions workflow `.github/workflows/keep-backend-awake.yml` runs automatically after push; check the repository's **Actions** tab. GitHub pauses scheduled workflows after 60 days without commits - re-enable it there if that happens.
+
+---
+
 ## 1.1.0
 
 **Date:** 2026-09-25

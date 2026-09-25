@@ -85,6 +85,10 @@ const Register = () => {
       <p style={{ marginTop: '20px' }}>
         Already have an account? <Link to="/login" style={{ color: '#007bff', textDecoration: 'none' }}>Log in here</Link>
       </p>
+
+      <p style={{ marginTop: '10px' }}>
+        <Link to="/install" style={{ color: '#007bff', textDecoration: 'none' }}>📲 Get the app on your phone or computer</Link>
+      </p>
     </div>
   );
 };

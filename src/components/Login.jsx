@@ -188,6 +188,18 @@ const Login = ({
 
                 </p>
 
+
+                <p style={styles.registerText}>
+
+                    <Link
+                        to="/install"
+                        style={styles.link}
+                    >
+                        📲 Get the app on your phone or computer
+                    </Link>
+
+                </p>
+
             </div>
 
         </div>
