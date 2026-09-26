@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
+import PendingSyncBanner from "./PendingSyncBanner";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -231,6 +232,8 @@ function Dashboard() {
     if (error) {
         return (
             <div className="dashboard-page" style={styles.page}>
+                <PendingSyncBanner />
+
                 <div className="dashboard-error-box" style={styles.errorBox}>
                     <h2 style={styles.errorTitle}>
                         Dashboard Error
@@ -258,6 +261,9 @@ function Dashboard() {
     return (
         <div className="dashboard-page" style={styles.page}>
             <div className="dashboard-container" style={styles.container}>
+
+                {/* Workouts saved on this phone, not uploaded yet */}
+                <PendingSyncBanner />
 
                 {/* =========================
                     HEADER

@@ -3,6 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import ThemeToggle from "../theme/ThemeToggle";
 import PwaActions from "./PwaActions";
 import { APP_VERSION_LABEL } from "../config/appVersion";
+import { clearSession, isAdmin } from "../auth/session";
+import { usePendingWorkouts } from "../offline/workoutOutbox";
+import "./Account.css";
 
 const navItems = [
     { label: "Dashboard", path: "/dashboard" },
@@ -14,17 +17,28 @@ const navItems = [
     { label: "Progress", path: "/progress" },
 ];
 
+// Narrower than this, the links move into the ☰ menu.
+const NAV_FULL_WIDTH = 1300;
+
+// Account pages: icon buttons on wide screens, text links in the menu.
+// Admin is shown only to admins (ADMIN_USERNAMES on the server).
+const profileItem = { label: "Profile", path: "/profile", icon: "👤" };
+const adminItem = { label: "Admin", path: "/admin", icon: "🛡️" };
+
 function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+    const { pending } = usePendingWorkouts();
+
     const token = localStorage.getItem("token");
 
     const isAuthPage =
         location.pathname === "/login" ||
-        location.pathname === "/register";
+        location.pathname === "/register" ||
+        location.pathname === "/forgot-password";
 
     const shouldHideNavbar = !token || isAuthPage;
 
@@ -38,7 +52,7 @@ function Navbar() {
         }
 
         const handleResize = () => {
-            if (window.innerWidth > 768) {
+            if (window.innerWidth >= NAV_FULL_WIDTH) {
                 setMobileMenuOpen(false);
             }
         };
@@ -72,10 +86,10 @@ function Navbar() {
         return null;
     }
 
+    const accountItems = isAdmin() ? [profileItem, adminItem] : [profileItem];
+
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("username");
-        localStorage.removeItem("user");
+        clearSession();
 
         setMobileMenuOpen(false);
 
@@ -185,6 +199,33 @@ function Navbar() {
                         justify-content: center;
 
                         gap: 4px;
+                    }
+
+                    .wt-account-link {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        width: 40px;
+                        height: 40px;
+                        flex-shrink: 0;
+
+                        border-radius: 10px;
+                        border: 1px solid var(--wt-border);
+                        background: var(--wt-surface-secondary);
+
+                        font-size: 18px;
+                        text-decoration: none;
+                    }
+
+                    .wt-account-link.active {
+                        border-color: var(--wt-accent);
+                        background: var(--wt-accent-soft);
+                    }
+
+                    .wt-account-link:focus-visible {
+                        outline: 2px solid var(--wt-accent);
+                        outline-offset: 2px;
                     }
 
                     .wt-nav-link {
@@ -382,7 +423,8 @@ function Navbar() {
                         }
                     }
 
-                    @media (max-width: 768px) {
+                    /* Below 1300px the links no longer fit: use the ☰ menu */
+                    @media (max-width: ${NAV_FULL_WIDTH - 0.02}px) {
                         .wt-navbar-inner {
                             min-height: 60px;
                             padding: 8px 14px;
@@ -397,6 +439,11 @@ function Navbar() {
                         }
 
                         .wt-navbar-actions .wt-logout-button {
+                            display: none;
+                        }
+
+                        /* In the ☰ menu instead */
+                        .wt-account-link {
                             display: none;
                         }
 
@@ -433,7 +480,8 @@ function Navbar() {
                     }
 
                     @media (max-width: 480px) {
-                        .wt-navbar-actions:has(.wt-pwa-actions) .wt-navbar-theme {
+                        .wt-navbar-actions:has(.wt-pwa-actions) .wt-navbar-theme,
+                        .wt-navbar-actions:has(.wt-sync-chip) .wt-navbar-theme {
                             display: none;
                         }
                     }
@@ -501,7 +549,30 @@ function Navbar() {
                     </div>
 
                     <div className="wt-navbar-actions">
+                        {pending.length > 0 && (
+                            <Link
+                                to="/profile"
+                                className="wt-sync-chip"
+                                title="Workouts saved on this phone, waiting to upload"
+                                aria-label={`${pending.length} workout${pending.length === 1 ? "" : "s"} waiting to upload`}
+                            >
+                                ⏳ {pending.length}
+                            </Link>
+                        )}
+
                         <PwaActions />
+
+                        {accountItems.map((item) => (
+                            <Link
+                                key={item.path}
+                                to={item.path}
+                                className={`wt-account-link ${isActive(item.path) ? "active" : ""}`}
+                                title={item.label}
+                                aria-label={item.label}
+                            >
+                                <span aria-hidden="true">{item.icon}</span>
+                            </Link>
+                        ))}
 
                         <span className="wt-navbar-theme">
                             <ThemeToggle />
@@ -537,7 +608,7 @@ function Navbar() {
                     <div className="wt-mobile-menu">
                         <div className="wt-mobile-menu-inner">
 
-                            {navItems.map((item) => (
+                            {[...navItems, ...accountItems].map((item) => (
                                 <Link
                                     key={item.path}
                                     to={item.path}

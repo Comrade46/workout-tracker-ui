@@ -12,6 +12,16 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Navbar from "./components/Navbar";
 import ServerWakeIndicator from "./components/ServerWakeIndicator";
+import api from "./api/axiosConfig";
+import {
+    clearSession,
+    getToken,
+    isAdmin,
+    mustChangePassword,
+    saveSession,
+    shouldRenewToken
+} from "./auth/session";
+import { startBackgroundSync } from "./offline/workoutOutbox";
 
 /*
  * Pages are loaded when first opened, so the first start on a phone
@@ -30,6 +40,9 @@ const InstallPage = lazy(() => import("./components/InstallPage"));
 const ProgramsPage = lazy(() => import("./components/ProgramsPage"));
 const ProgramDetailPage = lazy(() => import("./components/ProgramDetailPage"));
 const ProgramWorkoutPage = lazy(() => import("./components/ProgramWorkoutPage"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const AdminPage = lazy(() => import("./components/AdminPage"));
+const ForgotPassword = lazy(() => import("./components/ForgotPassword"));
 
 
 function PageLoading() {
@@ -53,9 +66,9 @@ function PageLoading() {
 
 function ProtectedRoute({ children }) {
 
-    const token = localStorage.getItem("token");
+    const location = useLocation();
 
-    if (!token) {
+    if (!getToken()) {
         return (
             <Navigate
                 to="/login"
@@ -64,7 +77,37 @@ function ProtectedRoute({ children }) {
         );
     }
 
+    // Logged in with a temporary password: choose a new one first.
+    if (mustChangePassword() && location.pathname !== "/profile") {
+        return (
+            <Navigate
+                to="/profile"
+                replace
+            />
+        );
+    }
+
     return children;
+}
+
+
+// Admin tools; the server checks this again for every request.
+function AdminRoute({ children }) {
+
+    if (!isAdmin()) {
+        return (
+            <Navigate
+                to="/dashboard"
+                replace
+            />
+        );
+    }
+
+    return (
+        <ProtectedRoute>
+            {children}
+        </ProtectedRoute>
+    );
 }
 
 
@@ -98,9 +141,7 @@ function AppContent() {
 
         const handleSessionExpired = () => {
 
-            localStorage.removeItem("token");
-            localStorage.removeItem("username");
-            localStorage.removeItem("user");
+            clearSession();
 
             setSessionMessage(
                 "Your session has expired. Please login again."
@@ -128,6 +169,25 @@ function AppContent() {
         };
 
     }, [navigate]);
+
+
+    /*
+     * On start: renew an older login token (keeps active users logged
+     * in) and keep uploading workouts saved on this phone.
+     */
+    useEffect(() => {
+
+        if (getToken() && shouldRenewToken()) {
+            api.post("/users/me/token")
+                .then((response) => saveSession(response.data))
+                .catch(() => {
+                    // Offline or server asleep: the current token still works.
+                });
+        }
+
+        return startBackgroundSync();
+
+    }, []);
 
 
     return (
@@ -162,6 +222,30 @@ function AppContent() {
                 <Route
                     path="/register"
                     element={<Register />}
+                />
+
+                <Route
+                    path="/forgot-password"
+                    element={<ForgotPassword />}
+                />
+
+                {/* Account: password, uploads waiting, feedback */}
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <ProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/admin"
+                    element={
+                        <AdminRoute>
+                            <AdminPage />
+                        </AdminRoute>
+                    }
                 />
 
                 {/* Ready-made programs */}

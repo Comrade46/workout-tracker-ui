@@ -10,6 +10,35 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.7.0 - Never lose a workout
+
+**Date:** 2026-09-26
+**Deployment status:** Not deployed yet
+
+### New features
+
+- **Workouts are never lost**: a finished workout is saved on the phone first, then uploaded. With no internet, a sleeping server or an expired login it stays on the phone ("⏳ 1" in the menu bar, banner on Dashboard and History) and uploads automatically when possible - on opening the app, when the phone is back online, and every minute
+- The server never saves the same workout twice, even if the phone sends it again
+- **Stay logged in**: logins last 30 days and are renewed whenever the app is opened
+- **Profile page** (👤): account details, change password, workouts waiting to upload, send feedback, log out
+- **Forgot password?** on the login page: sends a request to the app admin
+- **Admin page** (🛡️, admins only): open password requests, "Create temporary password" (the user must choose a new password after logging in with it), all users with workout counts, feedback inbox with "Mark done"
+- Changing or resetting a password logs out the account's other phones and computers
+
+### Fixes
+
+- Workouts done after midnight but before 5:30 am (India) were dated the previous day
+- Menu bar no longer runs off the screen on tablets and small laptops (menu ☰ below 1300 px)
+
+### Server (API)
+
+- New: `GET /api/users/me`, `POST /api/users/me/token`, `PUT /api/users/me/password`, `POST /api/feedback`, `POST /api/auth/password-help`, `/api/admin/*`
+- New tables `password_reset_requests`, `feedback`; new columns `users.must_change_password`, `users.password_changed_at`, `workout_sessions.client_id` (created automatically on start)
+- `JWT_EXPIRATION_MS` default is now 30 days - remove any `JWT_EXPIRATION_MS` override on Render
+- Admins = `ADMIN_USERNAMES` (exact usernames, comma separated)
+
+---
+
 ## 1.6.1 - New logo
 
 **Date:** 2026-09-26

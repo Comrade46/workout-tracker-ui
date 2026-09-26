@@ -1,0 +1,412 @@
+/* =========================================================
+   PROFILE, ADMIN, FORGOT PASSWORD, UPLOAD QUEUE
+   All colours come from the theme (Storm dark / Lavender light).
+   ========================================================= */
+
+.wt-acc-page {
+    min-height: calc(100vh - 70px);
+    padding: 28px 16px 60px;
+    background: var(--wt-page-background);
+    color: var(--wt-text-primary);
+}
+
+.wt-acc-container {
+    max-width: 860px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.wt-acc-title {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.wt-acc-subtitle {
+    margin: 4px 0 0;
+    color: var(--wt-text-secondary);
+    line-height: 1.5;
+}
+
+.wt-acc-card {
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    box-shadow: var(--wt-shadow-small);
+}
+
+.wt-acc-card h2 {
+    margin: 0 0 4px;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.wt-acc-card-hint {
+    margin: 0 0 16px;
+    color: var(--wt-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ---------- account summary ---------- */
+
+.wt-acc-identity {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.wt-acc-avatar {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+    font-size: 24px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.wt-acc-name {
+    font-size: 20px;
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.wt-acc-meta {
+    color: var(--wt-text-secondary);
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.wt-acc-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--wt-accent-soft);
+    color: var(--wt-text-primary);
+    border: 1px solid var(--wt-accent);
+    font-size: 12px;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+/* ---------- forms ---------- */
+
+.wt-acc-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.wt-acc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wt-acc-field label {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.wt-acc-input,
+.wt-acc-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--wt-input-border);
+    background: var(--wt-input-background);
+    color: var(--wt-input-text);
+    font-size: 15px;
+    font-family: inherit;
+}
+
+.wt-acc-input::placeholder,
+.wt-acc-textarea::placeholder {
+    color: var(--wt-input-placeholder);
+}
+
+.wt-acc-textarea {
+    min-height: 110px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.wt-acc-input:focus-visible,
+.wt-acc-textarea:focus-visible {
+    outline: 2px solid var(--wt-accent);
+    outline-offset: 1px;
+}
+
+.wt-acc-counter {
+    align-self: flex-end;
+    color: var(--wt-text-muted);
+    font-size: 12px;
+}
+
+/* ---------- buttons ---------- */
+
+.wt-acc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.wt-acc-button {
+    min-height: 44px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 10px;
+    background: var(--wt-button-background);
+    color: var(--wt-button-text);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.wt-acc-button.secondary {
+    background: var(--wt-secondary-button-background);
+    color: var(--wt-secondary-button-text);
+    border: 1px solid var(--wt-border);
+}
+
+.wt-acc-button.danger {
+    background: var(--wt-danger);
+    color: var(--wt-on-danger);
+}
+
+.wt-acc-button.small {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+.wt-acc-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wt-acc-button:focus-visible {
+    outline: 2px solid var(--wt-accent);
+    outline-offset: 2px;
+}
+
+/* ---------- messages ---------- */
+
+.wt-acc-message {
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface-secondary);
+}
+
+.wt-acc-message.error {
+    background: var(--wt-danger-soft);
+    border-color: var(--wt-danger-border);
+    color: var(--wt-text-primary);
+}
+
+.wt-acc-message.success {
+    background: var(--wt-success-soft);
+    border-color: var(--wt-success);
+    color: var(--wt-text-primary);
+}
+
+.wt-acc-message.warning {
+    background: var(--wt-accent-soft);
+    border-color: var(--wt-warning);
+    color: var(--wt-text-primary);
+}
+
+/* ---------- lists (uploads, users, requests, feedback) ---------- */
+
+.wt-acc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wt-acc-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 14px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--wt-surface-secondary);
+    border: 1px solid var(--wt-border);
+}
+
+.wt-acc-item.done {
+    opacity: 0.6;
+}
+
+.wt-acc-item-main {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.wt-acc-item-title {
+    font-weight: 800;
+    word-break: break-word;
+}
+
+.wt-acc-item-text {
+    margin-top: 6px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+.wt-acc-empty {
+    color: var(--wt-text-muted);
+    font-size: 14px;
+}
+
+.wt-acc-temp-password {
+    display: inline-block;
+    margin: 6px 0;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: var(--wt-surface-tertiary);
+    border: 1px dashed var(--wt-accent);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    user-select: all;
+}
+
+.wt-acc-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.wt-acc-count {
+    display: inline-block;
+    min-width: 24px;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+    font-size: 13px;
+    text-align: center;
+}
+
+/* ---------- login-style pages (forgot password) ---------- */
+
+.wt-acc-auth-page {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    background: var(--wt-page-background);
+    color: var(--wt-text-primary);
+}
+
+.wt-acc-auth-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 32px;
+    border-radius: 16px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    box-shadow: var(--wt-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wt-acc-auth-card h1 {
+    margin: 0;
+    text-align: center;
+    font-size: 26px;
+}
+
+.wt-acc-link {
+    color: var(--wt-accent);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.wt-acc-center {
+    text-align: center;
+}
+
+/* ---------- "waiting to upload" banner ---------- */
+
+.wt-sync-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    margin: 0 auto 18px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--wt-accent-soft);
+    border: 1px solid var(--wt-accent);
+    color: var(--wt-text-primary);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.wt-sync-banner.failed {
+    background: var(--wt-danger-soft);
+    border-color: var(--wt-danger-border);
+}
+
+/* Navbar chip */
+.wt-sync-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 34px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--wt-accent-soft);
+    border: 1px solid var(--wt-accent);
+    color: var(--wt-text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .wt-acc-title {
+        font-size: 25px;
+    }
+
+    .wt-acc-card {
+        padding: 16px;
+    }
+
+    .wt-acc-auth-card {
+        padding: 24px 20px;
+    }
+}

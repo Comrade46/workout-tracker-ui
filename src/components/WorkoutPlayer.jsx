@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
+import { newClientId, saveWorkoutSafely } from "../offline/workoutOutbox";
 import ExerciseImage from "./ExerciseImage";
 import ExerciseHowTo from "./ExerciseHowTo";
 import {
@@ -164,6 +165,9 @@ function WorkoutPlayer() {
 
     const [saveError, setSaveError] = useState("");
 
+    // "Saved on this phone, uploads later" (not an error)
+    const [saveNotice, setSaveNotice] = useState("");
+
     const [completed, setCompleted] = useState(false);
 
     const [saving, setSaving] = useState(false);
@@ -187,6 +191,10 @@ function WorkoutPlayer() {
     const announcedIndexRef = useRef(-1);
 
     const completionHandledRef = useRef(false);
+
+    // One ID per finished workout, so an upload retried later is never
+    // saved twice on the server.
+    const clientIdRef = useRef(newClientId());
 
     const timerRef = useRef(null);
 
@@ -1153,13 +1161,19 @@ function WorkoutPlayer() {
                 return;
             }
 
+            // Local date (toISOString would give the UTC date, i.e.
+            // yesterday for early-morning workouts in India).
+            const now = new Date();
+            const localDate = [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, "0"),
+                String(now.getDate()).padStart(2, "0")
+            ].join("-");
+
             const payload = {
-                workoutDate:
-                    new Date()
-                        .toISOString()
-                        .split(
-                            "T"
-                        )[0],
+                clientId: clientIdRef.current,
+
+                workoutDate: localDate,
 
                 notes: program
                     ? `${program.title} (${program.level}) - ${programDay.title}` +
@@ -1178,50 +1192,44 @@ function WorkoutPlayer() {
                 payload
             );
 
-            const response =
-                await api.post(
-                    "/workout-sessions",
+            // Stored on the phone first, then uploaded (see workoutOutbox).
+            const result =
+                await saveWorkoutSafely(
                     payload
                 );
 
-            setSavedSession(
-                response.data ||
-                    null
-            );
+            if (result.status === "uploaded") {
+                setSavedSession(
+                    result.session ||
+                        null
+                );
+            } else if (result.status === "waiting") {
+                setSaveNotice(
+                    "Saved on this phone. It will upload automatically when the internet and server are available - you don't need to do anything."
+                );
+            } else {
+                setSaveError(
+                    `${result.message} The workout is kept on this phone - see Profile › Workouts waiting to upload.`
+                );
+            }
 
             setCompleted(true);
 
             setMode(
                 "completed"
             );
-        } catch (requestError) {
+        } catch (unexpectedError) {
             console.error(
                 "Error saving workout session:",
-                requestError
+                unexpectedError
             );
 
             completionHandledRef.current =
                 false;
 
-            if (
-                requestError.response
-                    ?.status === 401
-            ) {
-                setSaveError(
-                    "Your session has expired. Please login again."
-                );
-            } else {
-                const backendMessage =
-                    requestError.response
-                        ?.data?.message ||
-                    requestError.response
-                        ?.data?.error;
-
-                setSaveError(
-                    backendMessage ||
-                        "Unable to save the completed workout."
-                );
-            }
+            setSaveError(
+                "Unable to save the completed workout."
+            );
         } finally {
             setSaving(false);
         }
@@ -1555,8 +1563,20 @@ function WorkoutPlayer() {
                         </div>
                     )}
 
+                    {saveNotice && (
+                        <div
+                            style={
+                                styles.saveNotice
+                            }
+                            role="status"
+                        >
+                            ⏳ {saveNotice}
+                        </div>
+                    )}
+
                     {!saving &&
-                        !saveError && (
+                        !saveError &&
+                        !saveNotice && (
                             <p
                                 style={
                                     styles.successText
@@ -3011,6 +3031,16 @@ const styles = {
             "var(--wt-success)",
         fontWeight:
             "600"
+    },
+
+    saveNotice: {
+        padding: "12px 14px",
+        marginBottom: "18px",
+        borderRadius: "10px",
+        backgroundColor: "var(--wt-accent-soft)",
+        border: "1px solid var(--wt-accent)",
+        color: "var(--wt-text-primary)",
+        lineHeight: 1.5
     },
 
     saveError: {

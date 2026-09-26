@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { cleanProgramNotes } from "../data/programs";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
+import PendingSyncBanner from "./PendingSyncBanner";
 import "./WorkoutHistory.css";
 
 function WorkoutHistory() {
@@ -231,6 +232,8 @@ function WorkoutHistory() {
                 className="wt-workout-history-page"
                 style={styles.center}
             >
+                <PendingSyncBanner />
+
                 <div style={styles.loadingIcon}>
                     🏋️
                 </div>
@@ -253,6 +256,8 @@ function WorkoutHistory() {
     if (error) {
         return (
             <div style={styles.center}>
+                <PendingSyncBanner />
+
                 <div style={styles.errorIcon}>
                     ⚠️
                 </div>
@@ -286,6 +291,9 @@ function WorkoutHistory() {
             style={styles.page}
         >
             <div style={styles.container}>
+
+                {/* Workouts saved on this phone, not uploaded yet */}
+                <PendingSyncBanner />
 
                 {/* HEADER */}
 

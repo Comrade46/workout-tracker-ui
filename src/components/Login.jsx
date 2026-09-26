@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axiosConfig";
+import { saveSession } from "../auth/session";
+import { pendingWorkouts } from "../offline/workoutOutbox";
 
 
 const Login = ({
@@ -19,6 +21,10 @@ const Login = ({
 
     const [loading, setLoading] =
         useState(false);
+
+    // Workouts saved on this phone that upload after login
+    const [waitingWorkouts] =
+        useState(() => pendingWorkouts().length);
 
 
     useEffect(() => {
@@ -52,14 +58,14 @@ const Login = ({
             );
 
 
-            localStorage.setItem(
-                "token",
-                response.data.token
-            );
+            saveSession(response.data);
 
 
+            // Temporary password from the admin: choose a new one first.
             window.location.href =
-                "/dashboard";
+                response.data.mustChangePassword
+                    ? "/profile"
+                    : "/dashboard";
 
 
         } catch (err) {
@@ -98,6 +104,17 @@ const Login = ({
 
                     <div style={styles.error}>
                         {error}
+                    </div>
+
+                )}
+
+
+                {waitingWorkouts > 0 && (
+
+                    <div style={styles.notice} role="status">
+                        ⏳ {waitingWorkouts} workout
+                        {waitingWorkouts === 1 ? " is" : "s are"} saved
+                        on this phone and will upload after you log in.
                     </div>
 
                 )}
@@ -150,6 +167,13 @@ const Login = ({
                             disabled={loading}
                             style={styles.input}
                         />
+
+                        <Link
+                            to="/forgot-password"
+                            style={styles.forgotLink}
+                        >
+                            Forgot password?
+                        </Link>
 
                     </div>
 
@@ -334,6 +358,30 @@ const styles = {
             "var(--wt-accent)",
         fontWeight: "600",
         textDecoration: "none"
+    },
+
+
+    forgotLink: {
+        alignSelf: "flex-end",
+        color:
+            "var(--wt-accent)",
+        fontSize: "14px",
+        fontWeight: "600",
+        textDecoration: "none"
+    },
+
+
+    notice: {
+        padding: "12px",
+        marginBottom: "18px",
+        borderRadius: "8px",
+        backgroundColor:
+            "var(--wt-accent-soft)",
+        color:
+            "var(--wt-text-primary)",
+        border:
+            "1px solid var(--wt-accent)",
+        fontSize: "14px"
     }
 
 };
