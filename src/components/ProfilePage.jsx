@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import BodyGoalsForm from "../progress/BodyGoalsForm";
 import api from "../api/axiosConfig";
 import { APP_VERSION, APP_VERSION_LABEL } from "../config/appVersion";
 import {
@@ -310,6 +311,7 @@ function Feedback() {
 // ---------------------------------------------------------------
 function ProfilePage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [account, setAccount] = useState(getStoredUser());
     const [forced, setForced] = useState(mustChangePassword());
 
@@ -328,6 +330,17 @@ function ProfilePage() {
             cancelled = true;
         };
     }, []);
+
+    // Links like /profile#goals jump to that section.
+    useEffect(() => {
+        if (!location.hash) return undefined;
+
+        const timer = window.setTimeout(() => {
+            document.getElementById(location.hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 300);
+
+        return () => window.clearTimeout(timer);
+    }, [location.hash]);
 
     const handleLogout = () => {
         clearSession();
@@ -348,7 +361,7 @@ function ProfilePage() {
             <div className="wt-acc-container">
                 <div>
                     <h1 className="wt-acc-title">👤 Profile</h1>
-                    <p className="wt-acc-subtitle">Your account, password and feedback.</p>
+                    <p className="wt-acc-subtitle">Your account, goals, password and feedback.</p>
                 </div>
 
                 {forced && (
@@ -375,6 +388,8 @@ function ProfilePage() {
                         </div>
                     </div>
                 </section>
+
+                {!forced && <BodyGoalsForm />}
 
                 <ChangePassword forced={forced} onChanged={handlePasswordChanged} />
 

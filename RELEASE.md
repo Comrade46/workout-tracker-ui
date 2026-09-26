@@ -10,10 +10,37 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
-## 1.7.0 - Never lose a workout
+## 1.8.0 - Progress & motivation
 
 **Date:** 2026-09-26
 **Deployment status:** Not deployed yet
+
+### New features
+
+- **This week** card on the Dashboard: workout days vs. your weekly goal (ring), Mon-Sun ticks, 🔥 weekly streak (weeks in a row with the goal reached) and best streak, minutes and ⚡ estimated calories this week
+- **Body** card on the Dashboard: latest weight, change since about 30 days ago, BMI with category, distance to target weight, and a quick "Log weight" for today
+- **Body & weight page** (`/body`): log weight for any day (one reading per day), weight trend chart (1 month / 3 months / 1 year / all) with target line, BMI scale with the healthy weight range for your height, list of readings with delete
+- **Workout calendar** at the top of History: workout days per month (dashed = still waiting to upload), tap a day to see its workouts
+- **Profile › Body & goals**: main goal, weekly goal (1-7 workout days), height (shows ft/in), target weight
+- ⚡ Calorie estimates on every History workout and on the workout finish screen (MET 5 x body weight x time - an estimate)
+- Workouts saved on the phone but not uploaded yet already count towards the week
+
+### Improvements
+
+- Dashboard loads its data in parallel (one wait instead of three)
+- Saving the same record twice at the same moment now answers "409 Conflict" instead of a server error
+
+### Server (API)
+
+- New: `GET /api/users/me/body`, `PUT /api/users/me/body/profile`, `PUT /api/users/me/body/weights`, `DELETE /api/users/me/body/weights/{id}`
+- New table `body_weight_entries`; new columns `users.height_cm`, `users.weekly_goal`, `users.fitness_goal`, `users.target_weight_kg` (created automatically on start)
+
+---
+
+## 1.7.0 - Never lose a workout
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
 
 ### New features
 

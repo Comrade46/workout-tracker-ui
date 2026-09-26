@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { newClientId, saveWorkoutSafely } from "../offline/workoutOutbox";
+import { estimateCalories, rememberedWeight } from "../progress/motivation";
 import ExerciseImage from "./ExerciseImage";
 import ExerciseHowTo from "./ExerciseHowTo";
 import {
@@ -173,6 +174,9 @@ function WorkoutPlayer() {
     const [saving, setSaving] = useState(false);
 
     const [savedSession, setSavedSession] = useState(null);
+
+    // Estimated calories for the finish screen (needs a logged weight)
+    const [burnedKcal, setBurnedKcal] = useState(null);
 
     const [currentSetNumber, setCurrentSetNumber] = useState(1);
 
@@ -1087,6 +1091,13 @@ function WorkoutPlayer() {
                     : 1
             );
 
+            setBurnedKcal(
+                estimateCalories(
+                    elapsedMinutes,
+                    rememberedWeight()
+                )
+            );
+
             const sets =
                 Object.values(
                     exerciseSets
@@ -1649,6 +1660,17 @@ function WorkoutPlayer() {
                             </span>
                         </div>
                     </div>
+
+                    {burnedKcal && (
+                        <p
+                            style={
+                                styles.kcalText
+                            }
+                            title="Estimate from workout time and your body weight"
+                        >
+                            ⚡ About {burnedKcal} kcal burned
+                        </p>
+                    )}
 
                     <div
                         style={
@@ -3031,6 +3053,13 @@ const styles = {
             "var(--wt-success)",
         fontWeight:
             "600"
+    },
+
+    kcalText: {
+        margin: "-8px 0 22px",
+        textAlign: "center",
+        color: "var(--wt-text-secondary)",
+        fontWeight: 700
     },
 
     saveNotice: {

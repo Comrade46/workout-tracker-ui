@@ -1,0 +1,571 @@
+/* =========================================================
+   PROGRESS & MOTIVATION
+   Weekly goal, body card, workout calendar, weight chart.
+   All colours come from the theme (Storm dark / Lavender light).
+   ========================================================= */
+
+.wt-pr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.wt-pr-card {
+    padding: 20px;
+    border-radius: 18px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    box-shadow: var(--wt-shadow-small);
+    color: var(--wt-text-primary);
+    min-width: 0;
+}
+
+.wt-pr-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.wt-pr-card-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.wt-pr-link {
+    color: var(--wt-accent);
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.wt-pr-link:focus-visible,
+.wt-pr-chip:focus-visible,
+.wt-pr-day-button:focus-visible,
+.wt-pr-nav-button:focus-visible {
+    outline: 2px solid var(--wt-accent);
+    outline-offset: 2px;
+}
+
+.wt-pr-muted {
+    color: var(--wt-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ---------- weekly goal ---------- */
+
+.wt-pr-week-top {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.wt-pr-ring {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+}
+
+.wt-pr-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.wt-pr-ring-track {
+    stroke: var(--wt-surface-tertiary);
+}
+
+.wt-pr-ring-value {
+    stroke: var(--wt-accent);
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.wt-pr-ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+}
+
+.wt-pr-ring-label strong {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.wt-pr-ring-label small {
+    color: var(--wt-text-secondary);
+    font-size: 12px;
+}
+
+.wt-pr-week-message {
+    font-weight: 800;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.wt-pr-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.wt-pr-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--wt-text-secondary);
+}
+
+.wt-pr-day-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--wt-surface-secondary);
+    border: 1px solid var(--wt-border);
+    color: var(--wt-text-primary);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.wt-pr-day.done .wt-pr-day-dot {
+    background: var(--wt-accent);
+    border-color: var(--wt-accent);
+    color: var(--wt-on-accent);
+}
+
+.wt-pr-day.today .wt-pr-day-dot {
+    box-shadow: 0 0 0 2px var(--wt-page-background), 0 0 0 4px var(--wt-accent);
+}
+
+.wt-pr-day.today span {
+    color: var(--wt-text-primary);
+    font-weight: 800;
+}
+
+.wt-pr-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.wt-pr-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--wt-surface-secondary);
+    border: 1px solid var(--wt-border);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* ---------- body card ---------- */
+
+.wt-pr-weight {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+}
+
+.wt-pr-weight strong {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.wt-pr-change {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--wt-text-secondary);
+}
+
+.wt-pr-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-primary);
+}
+
+.wt-pr-badge.success {
+    background: var(--wt-success-soft);
+    border-color: var(--wt-success);
+}
+
+.wt-pr-badge.warning {
+    background: var(--wt-accent-soft);
+    border-color: var(--wt-warning);
+}
+
+.wt-pr-badge.danger {
+    background: var(--wt-danger-soft);
+    border-color: var(--wt-danger-border);
+}
+
+.wt-pr-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.wt-pr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.wt-pr-row span:first-child {
+    color: var(--wt-text-secondary);
+}
+
+.wt-pr-row strong {
+    text-align: right;
+}
+
+.wt-pr-log {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.wt-pr-input {
+    width: 110px;
+    min-height: 42px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--wt-input-border);
+    background: var(--wt-input-background);
+    color: var(--wt-input-text);
+    font-size: 16px;
+    font-family: inherit;
+}
+
+.wt-pr-input:focus-visible {
+    outline: 2px solid var(--wt-accent);
+    outline-offset: 1px;
+}
+
+.wt-pr-button {
+    min-height: 42px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--wt-button-background);
+    color: var(--wt-button-text);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.wt-pr-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wt-pr-button:focus-visible {
+    outline: 2px solid var(--wt-accent);
+    outline-offset: 2px;
+}
+
+.wt-pr-note {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--wt-text-secondary);
+}
+
+.wt-pr-note.error {
+    color: var(--wt-danger);
+    font-weight: 700;
+}
+
+/* ---------- calendar ---------- */
+
+.wt-pr-calendar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.wt-pr-nav-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-primary);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.wt-pr-nav-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Page styles (e.g. History on phones) make every button full width
+   and 44px+ tall; the calendar keeps its own sizes. */
+.wt-pr-card .wt-pr-nav-button {
+    flex: 0 0 38px;
+    width: 38px;
+    min-height: 38px;
+}
+
+.wt-pr-card .wt-pr-day-button {
+    width: 100%;
+    min-height: 36px;
+}
+
+.wt-pr-month {
+    font-weight: 800;
+    font-size: 17px;
+    text-align: center;
+}
+
+.wt-pr-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.wt-pr-weekday {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wt-text-secondary);
+    padding-bottom: 4px;
+}
+
+.wt-pr-day-button {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    min-height: 36px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--wt-text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: default;
+}
+
+.wt-pr-day-button.outside {
+    color: var(--wt-text-muted);
+    opacity: 0.55;
+}
+
+.wt-pr-day-button.active {
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.wt-pr-day-button.pending {
+    background: var(--wt-accent-soft);
+    border: 1px dashed var(--wt-accent);
+    color: var(--wt-text-primary);
+    cursor: pointer;
+}
+
+.wt-pr-day-button.today {
+    border-color: var(--wt-accent);
+    border-width: 2px;
+}
+
+.wt-pr-day-button.selected {
+    box-shadow: 0 0 0 2px var(--wt-page-background), 0 0 0 4px var(--wt-text-primary);
+}
+
+.wt-pr-day-count {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.wt-pr-day-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.wt-pr-day-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--wt-surface-secondary);
+    border: 1px solid var(--wt-border);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+/* ---------- weight chart ---------- */
+
+.wt-pr-chart {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.wt-pr-chart-grid {
+    stroke: var(--wt-border);
+    stroke-width: 1;
+}
+
+.wt-pr-chart-line {
+    fill: none;
+    stroke: var(--wt-accent);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.wt-pr-chart-area {
+    fill: var(--wt-accent-soft);
+    opacity: 0.7;
+}
+
+.wt-pr-chart-point {
+    fill: var(--wt-surface);
+    stroke: var(--wt-accent);
+    stroke-width: 2.5;
+}
+
+.wt-pr-chart-target {
+    stroke: var(--wt-success);
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+}
+
+.wt-pr-chart-text {
+    fill: var(--wt-text-secondary);
+    font-size: 12px;
+    font-family: inherit;
+}
+
+.wt-pr-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.wt-pr-chip {
+    min-height: 36px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-primary);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.wt-pr-chip.selected {
+    background: var(--wt-accent);
+    border-color: var(--wt-accent);
+    color: var(--wt-on-accent);
+}
+
+/* ---------- BMI scale ---------- */
+
+.wt-pr-scale {
+    position: relative;
+    display: flex;
+    height: 12px;
+    margin: 18px 0 6px;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.wt-pr-scale span {
+    height: 100%;
+}
+
+.wt-pr-scale .under { background: var(--wt-warning); flex: 3.5; }
+.wt-pr-scale .healthy { background: var(--wt-success); flex: 6.5; }
+.wt-pr-scale .over { background: var(--wt-warning); flex: 5; }
+.wt-pr-scale .obese { background: var(--wt-danger); flex: 10; }
+
+.wt-pr-scale-marker {
+    position: absolute;
+    top: -5px;
+    width: 4px;
+    height: 22px;
+    border-radius: 2px;
+    background: var(--wt-text-primary);
+    box-shadow: 0 0 0 2px var(--wt-surface);
+    transform: translateX(-50%);
+}
+
+.wt-pr-scale-labels {
+    position: relative;
+    height: 16px;
+    font-size: 11px;
+    color: var(--wt-text-secondary);
+}
+
+/* Each number sits under its boundary on the bar */
+.wt-pr-scale-labels span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+}
+
+.wt-pr-scale-labels span:first-child {
+    transform: none;
+}
+
+.wt-pr-scale-labels span:last-child {
+    transform: translateX(-100%);
+}
+
+@media (max-width: 480px) {
+    .wt-pr-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wt-pr-card {
+        padding: 16px;
+    }
+
+    .wt-pr-ring {
+        width: 84px;
+        height: 84px;
+    }
+
+    .wt-pr-day-dot {
+        width: 28px;
+        height: 28px;
+    }
+}

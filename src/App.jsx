@@ -43,6 +43,7 @@ const ProgramWorkoutPage = lazy(() => import("./components/ProgramWorkoutPage"))
 const ProfilePage = lazy(() => import("./components/ProfilePage"));
 const AdminPage = lazy(() => import("./components/AdminPage"));
 const ForgotPassword = lazy(() => import("./components/ForgotPassword"));
+const BodyPage = lazy(() => import("./progress/BodyPage"));
 
 
 function PageLoading() {
@@ -235,6 +236,16 @@ function AppContent() {
                     element={
                         <ProtectedRoute>
                             <ProfilePage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Weight log, chart and BMI */}
+                <Route
+                    path="/body"
+                    element={
+                        <ProtectedRoute>
+                            <BodyPage />
                         </ProtectedRoute>
                     }
                 />

@@ -4,6 +4,11 @@ import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import PendingSyncBanner from "./PendingSyncBanner";
+import WeeklyGoalCard from "../progress/WeeklyGoalCard";
+import BodyCard from "../progress/BodyCard";
+import useBody from "../progress/useBody";
+import { allWorkouts } from "../progress/motivation";
+import { usePendingWorkouts } from "../offline/workoutOutbox";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -13,6 +18,12 @@ function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [exerciseCount, setExerciseCount] = useState(0);
     const [recentWorkouts, setRecentWorkouts] = useState([]);
+    const [allSessions, setAllSessions] = useState([]);
+
+    // Weight log + goals, and workouts still waiting on this phone
+    const body = useBody();
+    const { pending } = usePendingWorkouts();
+    const workouts = allWorkouts(allSessions, pending);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -51,95 +62,62 @@ function Dashboard() {
             }
 
             // ==============================
-            // ANALYTICS
+            // ANALYTICS, EXERCISES, WORKOUTS
             // ==============================
-            try {
-                const response = await api.get("/analytics/summary");
+            // Requested together: one wait instead of three.
+            const [analyticsResult, exercisesResult, historyResult] =
+                await Promise.allSettled([
+                    api.get("/analytics/summary"),
+                    api.get("/exercises"),
+                    api.get("/workout-sessions")
+                ]);
 
-                console.log(
-                    "Dashboard Analytics:",
-                    response.data
+            setAnalytics(
+                analyticsResult.status === "fulfilled"
+                    ? analyticsResult.value.data
+                    : null
+            );
+
+            setExerciseCount(
+                exercisesResult.status === "fulfilled" &&
+                    Array.isArray(exercisesResult.value.data)
+                    ? exercisesResult.value.data.length
+                    : 0
+            );
+
+            const history =
+                historyResult.status === "fulfilled" &&
+                Array.isArray(historyResult.value.data)
+                    ? historyResult.value.data
+                    : [];
+
+            setAllSessions(history);
+
+            const sorted = [...history]
+                .sort((a, b) => {
+                    const dateA = new Date(
+                        a.workoutDate ||
+                        a.createdAt ||
+                        0
+                    );
+
+                    const dateB = new Date(
+                        b.workoutDate ||
+                        b.createdAt ||
+                        0
+                    );
+
+                    return dateB - dateA;
+                })
+                .slice(0, 5);
+
+            setRecentWorkouts(sorted);
+
+            [analyticsResult, exercisesResult, historyResult]
+                .filter((result) => result.status === "rejected")
+                .forEach((result) =>
+                    console.error("Dashboard loading error:", result.reason)
                 );
-
-                setAnalytics(response.data);
-            } catch (analyticsError) {
-                console.error(
-                    "Analytics loading error:",
-                    analyticsError
-                );
-
-                setAnalytics(null);
-            }
-
-            // ==============================
-            // EXERCISES
-            // ==============================
-            try {
-                const response = await api.get("/exercises");
-
-                console.log(
-                    "Dashboard Exercises:",
-                    response.data
-                );
-
-                if (Array.isArray(response.data)) {
-                    setExerciseCount(response.data.length);
-                } else {
-                    setExerciseCount(0);
-                }
-            } catch (exerciseError) {
-                console.error(
-                    "Exercise loading error:",
-                    exerciseError
-                );
-
-                setExerciseCount(0);
-            }
-
-            // ==============================
-            // WORKOUT HISTORY
-            // ==============================
-            try {
-                const response =
-                    await api.get("/workout-sessions");
-
-                console.log(
-                    "Dashboard Workout History:",
-                    response.data
-                );
-
-                const history =
-                    Array.isArray(response.data)
-                        ? response.data
-                        : [];
-
-                const sorted = [...history]
-                    .sort((a, b) => {
-                        const dateA = new Date(
-                            a.workoutDate ||
-                            a.createdAt ||
-                            0
-                        );
-
-                        const dateB = new Date(
-                            b.workoutDate ||
-                            b.createdAt ||
-                            0
-                        );
-
-                        return dateB - dateA;
-                    })
-                    .slice(0, 5);
-
-                setRecentWorkouts(sorted);
-            } catch (historyError) {
-                console.error(
-                    "Workout history loading error:",
-                    historyError
-                );
-
-                setRecentWorkouts([]);
-            }
         } catch (dashboardError) {
             console.error(
                 "Dashboard error:",
@@ -293,6 +271,20 @@ function Dashboard() {
                     >
                         Start Workout
                     </button>
+                </div>
+
+                {/* =========================
+                    THIS WEEK + BODY
+                ========================= */}
+
+                <div className="wt-pr-grid">
+                    <WeeklyGoalCard
+                        workouts={workouts}
+                        weeklyGoal={body.profile.weeklyGoal}
+                        weights={body.weights}
+                    />
+
+                    <BodyCard body={body} />
                 </div>
 
                 {/* =========================

@@ -3,9 +3,17 @@ import { cleanProgramNotes } from "../data/programs";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import PendingSyncBanner from "./PendingSyncBanner";
+import WorkoutCalendar from "../progress/WorkoutCalendar";
+import useBody from "../progress/useBody";
+import { allWorkouts, estimateCalories, weightOn } from "../progress/motivation";
+import { usePendingWorkouts } from "../offline/workoutOutbox";
 import "./WorkoutHistory.css";
 
 function WorkoutHistory() {
+    // Weight log (for calorie estimates) and workouts waiting on this phone
+    const body = useBody();
+    const { pending } = usePendingWorkouts();
+
     const navigate = useNavigate();
 
     const [sessions, setSessions] = useState([]);
@@ -324,6 +332,13 @@ function WorkoutHistory() {
                     </button>
                 </div>
 
+                {/* CALENDAR */}
+
+                <WorkoutCalendar
+                    workouts={allWorkouts(sessions, pending)}
+                    weights={body.weights}
+                />
+
                 {/* EMPTY STATE */}
 
                 {sessions.length === 0 ? (
@@ -496,6 +511,33 @@ function WorkoutHistory() {
                                                 </small>
                                             </div>
                                         </div>
+
+                                        {estimateCalories(
+                                            session.durationMinutes,
+                                            weightOn(body.weights, session.workoutDate)
+                                        ) && (
+                                            <div
+                                                style={styles.stat}
+                                                title="Estimate from workout time and your body weight"
+                                            >
+                                                <span style={styles.statIcon}>
+                                                    ⚡
+                                                </span>
+
+                                                <div style={styles.statContent}>
+                                                    <strong>
+                                                        ≈ {estimateCalories(
+                                                            session.durationMinutes,
+                                                            weightOn(body.weights, session.workoutDate)
+                                                        )}
+                                                    </strong>
+
+                                                    <small>
+                                                        kcal
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <button
                                             type="button"
