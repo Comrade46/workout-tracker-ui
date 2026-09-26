@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../api/axiosConfig";
 import "./Exercises.css";
+import ExerciseImage from "./ExerciseImage";
+import ExerciseHowTo from "./ExerciseHowTo";
 
 const EMPTY_FORM = {
     name: "",
@@ -1088,6 +1090,17 @@ function Exercises() {
                                             styles.card
                                         }
                                     >
+                                        {/* Picture (when available) */}
+                                        <ExerciseImage
+                                            name={
+                                                exercise.name
+                                            }
+                                            height={150}
+                                            style={{
+                                                marginBottom: 14
+                                            }}
+                                        />
+
                                         <div
                                             style={
                                                 styles.cardTop
@@ -1186,6 +1199,13 @@ function Exercises() {
                                                 }
                                             </span>
                                         </div>
+
+                                        <ExerciseHowTo
+                                            name={
+                                                exercise.name
+                                            }
+                                            compact
+                                        />
 
                                         <div
                                             style={
@@ -1328,6 +1348,19 @@ function Exercises() {
                         )}
                     </div>
                 )}
+
+                <p style={styles.mediaCredit}>
+                    Exercise photos and instructions:{" "}
+                    <a
+                        href="https://github.com/yuhonas/free-exercise-db"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={styles.mediaCreditLink}
+                    >
+                        free-exercise-db
+                    </a>{" "}
+                    (public domain).
+                </p>
             </div>
         </div>
     );
@@ -1622,6 +1655,17 @@ const styles = {
 
     timeLabel: {
         color: "var(--wt-text-muted)"
+    },
+
+    mediaCredit: {
+        marginTop: "28px",
+        textAlign: "center",
+        fontSize: "12px",
+        color: "var(--wt-text-muted)"
+    },
+
+    mediaCreditLink: {
+        color: "var(--wt-text-secondary)"
     },
 
     cardActions: {

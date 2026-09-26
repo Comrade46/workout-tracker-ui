@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
+import ExerciseImage from "./ExerciseImage";
+import ExerciseHowTo from "./ExerciseHowTo";
+import {
+    beep,
+    describeTarget,
+    isSoundOn,
+    keepScreenOn,
+    setSoundOn,
+    speak,
+    unlockAudio,
+    vibrate
+} from "../coach/workoutCoach";
 import "./WorkoutPlayer.css";
 
 function formatTime(totalSeconds) {
@@ -147,6 +159,18 @@ function WorkoutPlayer() {
     const [currentSetNumber, setCurrentSetNumber] = useState(1);
 
     const workoutStartTimeRef = useRef(null);
+
+    // ---------- Coach (voice, beeps, countdown, screen on) ----------
+    const [soundOn, setSoundOnState] = useState(isSoundOn());
+
+    // 3-2-1 "Get ready" before a timed exercise starts (null = none)
+    const [countdown, setCountdown] = useState(null);
+
+    // True once the user pressed Start for the first time
+    const [workoutActive, setWorkoutActive] = useState(false);
+
+    // Index of the exercise the coach last announced
+    const announcedIndexRef = useRef(-1);
 
     const completionHandledRef = useRef(false);
 
@@ -580,6 +604,9 @@ function WorkoutPlayer() {
     // =====================================================
 
     const startWorkout = () => {
+        // Phones only allow sound after a tap: unlock it here.
+        unlockAudio();
+
         if (
             !workoutStartTimeRef.current
         ) {
@@ -587,8 +614,31 @@ function WorkoutPlayer() {
                 Date.now();
         }
 
-        setIsRunning(true);
+        setWorkoutActive(true);
         setMode("exercise");
+
+        // Announce the exercise if the coach has not done so yet
+        // (the first exercise, before Start was pressed).
+        if (announcedIndexRef.current !== currentIndex && currentExercise) {
+            announcedIndexRef.current = currentIndex;
+
+            speak(
+                `${getExerciseName(currentExercise)}. ` +
+                describeTarget(
+                    currentTrackingType,
+                    currentTargetValue,
+                    currentTargetSets
+                )
+            );
+        }
+
+        // Timed exercises get a 3-2-1 "Get ready" first.
+        if (currentTrackingType === "TIME") {
+            setCountdown(3);
+            return;
+        }
+
+        setIsRunning(true);
     };
 
     // =====================================================
@@ -692,6 +742,8 @@ function WorkoutPlayer() {
             return;
         }
 
+        activateCoach();
+
         setIsRunning(false);
 
         if (mode === "rest") {
@@ -719,7 +771,20 @@ function WorkoutPlayer() {
     // ADD REPS SET
     // =====================================================
 
+    // The coach starts with the user's first action (Start, Skip,
+    // Continue or logging a set). Phones need that tap to allow sound.
+    const activateCoach = () => {
+        unlockAudio();
+
+        if (!workoutStartTimeRef.current) {
+            workoutStartTimeRef.current = Date.now();
+        }
+
+        setWorkoutActive(true);
+    };
+
     const addRepSet = () => {
+        activateCoach();
         setSetError("");
 
         const reps =
@@ -1109,6 +1174,175 @@ function WorkoutPlayer() {
     ]);
 
     // =====================================================
+    // COACH
+    // =====================================================
+
+    // 3-2-1 countdown, then the timer starts.
+    useEffect(() => {
+        if (countdown === null) {
+            return undefined;
+        }
+
+        if (countdown === 0) {
+            setCountdown(null);
+            setIsRunning(true);
+            beep({ frequency: 1320, durationMs: 350 });
+            speak("Go!");
+            return undefined;
+        }
+
+        beep({ frequency: 880, durationMs: 150 });
+
+        const timer = setTimeout(
+            () => setCountdown((value) => (value === null ? null : value - 1)),
+            1000
+        );
+
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
+    // A new exercise or leaving the exercise screen cancels the countdown.
+    useEffect(() => {
+        setCountdown(null);
+    }, [currentIndex, mode]);
+
+    // Announce each new exercise once the workout is under way.
+    useEffect(() => {
+        if (
+            !workoutActive ||
+            mode !== "exercise" ||
+            !currentExercise ||
+            announcedIndexRef.current === currentIndex
+        ) {
+            return;
+        }
+
+        announcedIndexRef.current = currentIndex;
+
+        vibrate(80);
+
+        speak(
+            `${currentIndex === exercises.length - 1 ? "Last exercise. " : "Next: "}` +
+            `${getExerciseName(currentExercise)}. ` +
+            describeTarget(
+                currentTrackingType,
+                currentTargetValue,
+                currentTargetSets
+            )
+        );
+    }, [
+        workoutActive,
+        mode,
+        currentIndex,
+        currentExercise,
+        exercises.length,
+        currentTrackingType,
+        currentTargetValue,
+        currentTargetSets
+    ]);
+
+    // Rest started: say how long and what comes next.
+    useEffect(() => {
+        if (mode !== "rest" || !workoutActive) {
+            return;
+        }
+
+        vibrate([200, 100, 200]);
+        beep({ frequency: 660, durationMs: 400 });
+
+        const nextExercise = exercises[currentIndex + 1];
+
+        speak(
+            nextExercise
+                ? `Rest. Next up: ${getExerciseName(nextExercise)}.`
+                : "Rest. That was the last exercise."
+        );
+        // Only when rest begins.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mode]);
+
+    // Beeps in the last 3 seconds, "halfway" for longer timed sets.
+    useEffect(() => {
+        if (!isRunning) {
+            return;
+        }
+
+        const timedExercise =
+            mode === "exercise" && currentTrackingType === "TIME";
+
+        if (!timedExercise && mode !== "rest") {
+            return;
+        }
+
+        if (timeLeft > 0 && timeLeft <= 3) {
+            beep({ frequency: 880, durationMs: 120 });
+        }
+
+        if (
+            timedExercise &&
+            currentTargetValue >= 20 &&
+            timeLeft === Math.floor(currentTargetValue / 2)
+        ) {
+            speak("Halfway there. Keep going!");
+        }
+        // Runs once per second as the timer ticks.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timeLeft]);
+
+    // Next set of a timed exercise started automatically.
+    useEffect(() => {
+        if (
+            workoutActive &&
+            mode === "exercise" &&
+            currentTrackingType === "TIME" &&
+            currentSetNumber > 1
+        ) {
+            vibrate(150);
+            speak(`Set ${currentSetNumber} of ${currentTargetSets}`);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentSetNumber]);
+
+    // Finished.
+    useEffect(() => {
+        if (mode === "completed" && workoutActive) {
+            vibrate([300, 150, 300]);
+            speak("Workout complete. Great job!");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mode]);
+
+    // Keep the screen on from Start until the workout is finished.
+    useEffect(() => {
+        keepScreenOn(workoutActive && mode !== "completed");
+    }, [workoutActive, mode]);
+
+    useEffect(() => {
+        return () => {
+            keepScreenOn(false);
+            window.speechSynthesis?.cancel();
+        };
+    }, []);
+
+    const toggleSound = () => {
+        const next = !soundOn;
+
+        setSoundOn(next);
+        setSoundOnState(next);
+
+        if (next) {
+            unlockAudio();
+            speak("Sound on");
+        }
+    };
+
+    const addRestTime = () => {
+        setTimeLeft((value) => value + 20);
+    };
+
+    const nextExercise = exercises[currentIndex + 1] || null;
+
+    // =====================================================
     // LOADING
     // =====================================================
 
@@ -1434,6 +1668,19 @@ function WorkoutPlayer() {
                         ← Back
                     </button>
 
+                    <button
+                        type="button"
+                        onClick={toggleSound}
+                        style={
+                            styles.soundButton
+                        }
+                        title={soundOn ? "Voice coach and beeps on" : "Voice coach and beeps off"}
+                        aria-label={soundOn ? "Turn voice coach and beeps off" : "Turn voice coach and beeps on"}
+                        aria-pressed={soundOn}
+                    >
+                        {soundOn ? "🔊" : "🔇"}
+                    </button>
+
                     <div
                         style={
                             styles.progressInfo
@@ -1527,9 +1774,28 @@ function WorkoutPlayer() {
                         </div>
                     </div>
 
+                    {/* PICTURE + HOW TO (hidden during rest so the
+                        rest timer and "Next up" stay at the top) */}
+
+                    {mode === "exercise" && (
+                        <>
+                            <ExerciseImage
+                                key={getExerciseName(currentExercise)}
+                                name={getExerciseName(currentExercise)}
+                                height={200}
+                                style={{ marginTop: 16 }}
+                            />
+
+                            <ExerciseHowTo
+                                name={getExerciseName(currentExercise)}
+                            />
+                        </>
+                    )}
+
                     {/* SET INFORMATION */}
 
                     <div
+                        className="wt-player-targets"
                         style={
                             styles.targetRow
                         }
@@ -1622,9 +1888,11 @@ function WorkoutPlayer() {
                                             styles.timerText
                                         }
                                     >
-                                        {formatTime(
-                                            timeLeft
-                                        )}
+                                        {countdown !== null
+                                            ? countdown
+                                            : formatTime(
+                                                timeLeft
+                                            )}
                                     </span>
                                 </div>
 
@@ -1632,10 +1900,13 @@ function WorkoutPlayer() {
                                     style={
                                         styles.timerLabel
                                     }
+                                    aria-live="polite"
                                 >
-                                    {isRunning
-                                        ? "Exercise in progress"
-                                        : "Ready to start"}
+                                    {countdown !== null
+                                        ? "Get ready…"
+                                        : isRunning
+                                            ? "Exercise in progress"
+                                            : "Ready to start"}
                                 </div>
                             </div>
                         )}
@@ -1825,20 +2096,70 @@ function WorkoutPlayer() {
                                 )}
                             </div>
 
-                            <p
+                            {nextExercise ? (
+                                <div
+                                    style={
+                                        styles.nextUpCard
+                                    }
+                                >
+                                    <ExerciseImage
+                                        name={getExerciseName(nextExercise)}
+                                        height={72}
+                                        animate={false}
+                                        rounded={10}
+                                        style={{ width: 96, flexShrink: 0 }}
+                                        fallback={
+                                            <div style={styles.nextUpIcon}>
+                                                ⚡
+                                            </div>
+                                        }
+                                    />
+
+                                    <div style={{ minWidth: 0, textAlign: "left" }}>
+                                        <div style={styles.nextUpLabel}>
+                                            NEXT UP
+                                        </div>
+
+                                        <div style={styles.nextUpName}>
+                                            {getExerciseName(nextExercise)}
+                                        </div>
+
+                                        <div style={styles.nextUpTarget}>
+                                            {getTrackingType(nextExercise) === "TIME"
+                                                ? `⏱ ${getTargetValue(nextExercise)}s`
+                                                : `🔢 ${getTargetValue(nextExercise)} reps`}
+                                            {getTargetSets(nextExercise) > 1
+                                                ? ` × ${getTargetSets(nextExercise)} sets`
+                                                : ""}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p
+                                    style={
+                                        styles.centerText
+                                    }
+                                >
+                                    That was the last exercise. 🎉
+                                </p>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={addRestTime}
                                 style={
-                                    styles.centerText
+                                    styles.addRestButton
                                 }
                             >
-                                Get ready for the
-                                next set/exercise.
-                            </p>
+                                +20s rest
+                            </button>
                         </div>
                     )}
 
-                    {/* CONTROLS */}
+                    {/* CONTROLS (fixed bar at the bottom on phones) */}
 
                     <div
+                        className="wt-player-controls"
                         style={
                             styles.controls
                         }
@@ -1892,8 +2213,10 @@ function WorkoutPlayer() {
                                 <button
                                     type="button"
                                     onClick={
-                                        () =>
-                                            moveToNextExercise()
+                                        () => {
+                                            activateCoach();
+                                            moveToNextExercise();
+                                        }
                                     }
                                     style={
                                         styles.primaryButton
@@ -2013,6 +2336,77 @@ function WorkoutPlayer() {
 // =====================================================
 
 const styles = {
+    soundButton: {
+        width: 44,
+        height: 44,
+        minHeight: 0,
+        padding: 0,
+        border: "1px solid var(--wt-border)",
+        borderRadius: 12,
+        background: "var(--wt-surface)",
+        color: "var(--wt-text-primary)",
+        fontSize: 20,
+        cursor: "pointer",
+        flexShrink: 0
+    },
+
+    nextUpCard: {
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        width: "100%",
+        maxWidth: 420,
+        margin: "18px auto 0",
+        padding: 12,
+        border: "1px solid var(--wt-border)",
+        borderRadius: 14,
+        background: "var(--wt-surface)",
+        color: "var(--wt-text-primary)"
+    },
+
+    nextUpIcon: {
+        width: 96,
+        height: 72,
+        flexShrink: 0,
+        borderRadius: 10,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 30,
+        background: "var(--wt-surface-tertiary)"
+    },
+
+    nextUpLabel: {
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: 1.5,
+        color: "var(--wt-accent)"
+    },
+
+    nextUpName: {
+        fontSize: 17,
+        fontWeight: 700,
+        color: "var(--wt-text-primary)",
+        overflowWrap: "anywhere"
+    },
+
+    nextUpTarget: {
+        marginTop: 2,
+        fontSize: 13,
+        color: "var(--wt-text-muted)"
+    },
+
+    addRestButton: {
+        marginTop: 14,
+        padding: "8px 16px",
+        border: "1px solid var(--wt-border)",
+        borderRadius: 999,
+        background: "transparent",
+        color: "var(--wt-text-primary)",
+        fontWeight: 700,
+        cursor: "pointer"
+    },
+
     page: {
         color:
             "var(--wt-text-primary)",

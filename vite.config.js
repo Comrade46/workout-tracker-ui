@@ -126,6 +126,22 @@ export default defineConfig({
                             url.pathname.startsWith("/api/"),
 
                         handler: "NetworkOnly"
+                    },
+                    {
+                        // Exercise pictures: cached after first view, so
+                        // they show instantly and work offline.
+                        urlPattern: ({ url }) =>
+                            url.pathname.startsWith("/exercise-media/"),
+
+                        handler: "CacheFirst",
+
+                        options: {
+                            cacheName: "exercise-media",
+                            expiration: {
+                                maxEntries: 300,
+                                maxAgeSeconds: 60 * 60 * 24 * 180
+                            }
+                        }
                     }
                 ]
             },

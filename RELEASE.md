@@ -10,6 +10,33 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.3.0 - Guided workouts
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
+
+First feature update inspired by popular home-workout apps.
+
+### New features
+
+- **Exercise pictures**: 34 of the 40 built-in exercises show start / end photos that alternate like a short animation (Exercise Library cards and Workout Player)
+- **"How to do it"** steps and target muscles for each of those exercises
+- **Voice coach** in the Workout Player: announces each exercise and its target, "3-2-1 Go", "Halfway there", "Set 2 of 3", rest length and what comes next, and "Workout complete"
+- **3-2-1 "Get ready" countdown** before timed exercises
+- **Beeps** in the last 3 seconds of timers and **vibration** when a timer ends (phones)
+- **Screen stays on** during a workout
+- **Rest screen**: "Next up" card with picture and target, plus a **+20s rest** button
+- **🔊 / 🔇** button in the player (remembered on the device)
+- Phones: Start / Pause / Skip / Continue in a bar fixed to the bottom of the screen; target boxes in 2 columns
+
+### Notes
+
+- Exercise photos and instructions: free-exercise-db (public domain, Unlicense). Six exercises without a clear match (Burpees, Jumping Jacks, High Knees, Pike Push-Ups, Doorframe/Towel Rows, Resistance Band Bicep Curls) keep their icon.
+- Pictures are cached on the device after first view (work offline).
+- Backend moved from Render Oregon to Render **Singapore** (next to the Aiven database in Bengaluru): database requests about 3x faster.
+
+---
+
 ## 1.2.1
 
 **Date:** 2026-09-25
