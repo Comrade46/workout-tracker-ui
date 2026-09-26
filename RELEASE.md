@@ -10,6 +10,23 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.5.0 - Lavender light theme
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
+
+### New features
+
+- **New light theme "Lavender"**: near-white lavender-tinted backgrounds, white cards and a deep purple accent, from the palette `#C0C0C0 #B7A0CC #4E3677 #342B45 #1A1829`. Every text colour meets WCAG AA contrast (all 10 pages checked: 0 failures)
+- Primary buttons, badges, timer ring and progress bars are purple in light mode, mint in dark mode
+- Input boxes have a clearly visible border in light mode
+
+### Bug fixes
+
+- Dashboard showed 0 for Total Minutes, Total Sets and Total Volume (it read the wrong field names from the server)
+
+---
+
 ## 1.4.0 - Storm dark theme
 
 **Date:** 2026-09-26

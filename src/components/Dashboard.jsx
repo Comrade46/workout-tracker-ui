@@ -322,7 +322,7 @@ function Dashboard() {
 
                         <h2 style={styles.cardValue}>
                             {getValue(
-                                analytics?.totalMinutes
+                                analytics?.totalDurationMinutes
                             )}
                         </h2>
                     </div>
@@ -338,7 +338,7 @@ function Dashboard() {
 
                         <h2 style={styles.cardValue}>
                             {getValue(
-                                analytics?.totalSets
+                                analytics?.totalSetsCompleted
                             )}
                         </h2>
                     </div>
@@ -354,7 +354,7 @@ function Dashboard() {
 
                         <h2 style={styles.cardValue}>
                             {formatVolume(
-                                analytics?.totalVolume
+                                analytics?.totalVolumeLifted
                             )}
                         </h2>
                     </div>

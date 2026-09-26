@@ -1,57 +1,59 @@
 :root {
     color-scheme: light;
 
-    --wt-page-background: #f5f7fb;
-    --wt-surface: #ffffff;
-    --wt-surface-secondary: #f8fafc;
-    --wt-surface-tertiary: #eef2f7;
+    /*
+     * "Lavender" light theme (palette #C0C0C0 #B7A0CC #4E3677 #342B45 #1A1829).
+     * Keep in sync with themeValues.light in theme.js.
+     */
+    --wt-page-background: #F6F4FA;
+    --wt-surface: #FFFFFF;
+    --wt-surface-secondary: #FAF8FD;
+    --wt-surface-tertiary: #EFEAF6;
 
-    --wt-text-primary: #111827;
-    --wt-text-secondary: #4b5563;
-    --wt-text-muted: #6b7280;
+    --wt-text-primary: #1A1829;
+    --wt-text-secondary: #463C5C;
+    --wt-text-muted: #6A6180;
 
-    --wt-border: #dfe3e8;
-    --wt-border-strong: #cbd5e1;
+    --wt-border: #E3DCEE;
+    --wt-border-strong: #C9BCDD;
 
-    --wt-input-background: #ffffff;
-    --wt-input-text: #111827;
-    --wt-input-placeholder: #6b7280;
-    --wt-input-border: #cbd5e1;
+    --wt-input-background: #FFFFFF;
+    --wt-input-text: #1A1829;
+    --wt-input-placeholder: #6A6180;
+    --wt-input-border: #9C8AB5;
 
-    --wt-select-background: #ffffff;
-    --wt-select-text: #111827;
+    --wt-select-background: #FFFFFF;
+    --wt-select-text: #1A1829;
 
-    --wt-option-background: #ffffff;
-    --wt-option-text: #111827;
+    --wt-option-background: #FFFFFF;
+    --wt-option-text: #1A1829;
 
-    --wt-accent: #2563eb;
-    --wt-accent-soft: rgba(37, 99, 235, 0.1);
+    --wt-button-background: #4E3677;
+    --wt-button-text: #FFFFFF;
+    --wt-secondary-button-background: #FFFFFF;
+    --wt-secondary-button-text: #1A1829;
 
-    --wt-success: #16a34a;
-    --wt-warning: #d97706;
-    --wt-danger: #dc2626;
-    --wt-danger-soft: rgba(220, 38, 38, 0.10);
-    --wt-danger-border: #fecaca;
+    --wt-accent: #4E3677;
+    --wt-accent-soft: rgba(78, 54, 119, 0.10);
+    --wt-on-accent: #FFFFFF;
 
-    --wt-accent-soft: rgba(37, 99, 235, 0.1);
-    --wt-success-soft: rgba(22, 163, 74, 0.10);
+    --wt-success: #166534;
+    --wt-success-soft: rgba(22, 101, 52, 0.10);
+    --wt-on-success: #FFFFFF;
 
-    /* Text on solid accent / status colours */
-    --wt-on-accent: #ffffff;
-    --wt-on-success: #ffffff;
-    --wt-on-warning: #ffffff;
-    --wt-on-danger: #ffffff;
+    --wt-warning: #B45309;
+    --wt-on-warning: #FFFFFF;
 
-    --wt-button-background: #111827;
-    --wt-button-text: #ffffff;
-    --wt-secondary-button-background: #ffffff;
-    --wt-secondary-button-text: #111827;
+    --wt-danger: #C62828;
+    --wt-danger-soft: rgba(198, 40, 40, 0.10);
+    --wt-danger-border: rgba(198, 40, 40, 0.30);
+    --wt-on-danger: #FFFFFF;
 
     --wt-shadow:
-        0 10px 30px rgba(15, 23, 42, 0.08);
+        0 8px 30px rgba(52, 43, 69, 0.10);
 
     --wt-shadow-small:
-        0 4px 12px rgba(15, 23, 42, 0.06);
+        0 4px 12px rgba(52, 43, 69, 0.07);
 
     font-family:
         Inter,

@@ -6,58 +6,64 @@ export const THEMES = {
 };
 
 export const themeValues = {
+    /*
+     * "Lavender" light theme - near-white lavender-tinted backgrounds with a
+     * deep purple accent, from the violet flower palette:
+     *   #C0C0C0  #B7A0CC  #4E3677  #342B45  #1A1829
+     * Every text colour meets WCAG AA (4.5:1) on the surfaces it is used on.
+     */
     light: {
-        pageBackground: "#f5f7fb",
-        surface: "#ffffff",
-        surfaceSecondary: "#f8fafc",
-        surfaceTertiary: "#eef2f7",
+        pageBackground: "#F6F4FA",
+        surface: "#FFFFFF",
+        surfaceSecondary: "#FAF8FD",
+        surfaceTertiary: "#EFEAF6",
 
-        textPrimary: "#111827",
-        textSecondary: "#4b5563",
-        textMuted: "#6b7280",
+        textPrimary: "#1A1829",
+        textSecondary: "#463C5C",
+        textMuted: "#6A6180",
 
-        border: "#dfe3e8",
-        borderStrong: "#cbd5e1",
+        border: "#E3DCEE",
+        borderStrong: "#C9BCDD",
 
-        inputBackground: "#ffffff",
-        inputText: "#111827",
-        inputPlaceholder: "#6b7280",
-        inputBorder: "#cbd5e1",
+        inputBackground: "#FFFFFF",
+        inputText: "#1A1829",
+        inputPlaceholder: "#6A6180",
+        inputBorder: "#9C8AB5",
 
-        selectBackground: "#ffffff",
-        selectText: "#111827",
-        optionBackground: "#ffffff",
-        optionText: "#111827",
+        selectBackground: "#FFFFFF",
+        selectText: "#1A1829",
+        optionBackground: "#FFFFFF",
+        optionText: "#1A1829",
 
-        buttonBackground: "#111827",
-        buttonText: "#ffffff",
+        buttonBackground: "#4E3677",
+        buttonText: "#FFFFFF",
 
-        secondaryButtonBackground: "#ffffff",
-        secondaryButtonText: "#111827",
+        secondaryButtonBackground: "#FFFFFF",
+        secondaryButtonText: "#1A1829",
 
-        accent: "#2563eb",
-        accentSoft: "rgba(37, 99, 235, 0.10)",
-        onAccent: "#ffffff",
+        accent: "#4E3677",
+        accentSoft: "rgba(78, 54, 119, 0.10)",
+        onAccent: "#FFFFFF",
 
-        success: "#15803d",
-        successSoft: "rgba(22, 163, 74, 0.10)",
-        onSuccess: "#ffffff",
+        success: "#166534",
+        successSoft: "rgba(22, 101, 52, 0.10)",
+        onSuccess: "#FFFFFF",
 
-        warning: "#d97706",
-        onWarning: "#ffffff",
+        warning: "#B45309",
+        onWarning: "#FFFFFF",
 
-        danger: "#dc2626",
-        dangerSoft: "rgba(220, 38, 38, 0.10)",
-        dangerBorder: "#fecaca",
-        onDanger: "#ffffff",
+        danger: "#C62828",
+        dangerSoft: "rgba(198, 40, 40, 0.10)",
+        dangerBorder: "rgba(198, 40, 40, 0.30)",
+        onDanger: "#FFFFFF",
 
         shadow:
-            "0 8px 30px rgba(15, 23, 42, 0.08)",
+            "0 8px 30px rgba(52, 43, 69, 0.10)",
         shadowSmall:
-            "0 4px 12px rgba(15, 23, 42, 0.06)",
+            "0 4px 12px rgba(52, 43, 69, 0.07)",
 
         // Phone status bar colour
-        statusBar: "#2563eb"
+        statusBar: "#4E3677"
     },
 
     /*
