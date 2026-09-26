@@ -10,6 +10,25 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.6.1 - New logo
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
+
+### Changes
+
+- New app logo everywhere: phone home-screen icon (Android + iPhone), browser tab icon, navbar and install page
+- Android icon keeps the whole logo inside the round / squircle launcher mask
+- Launch screen and status bar are black to match the logo
+- Full-size logo kept in `branding/logo-1254.png` for future icon sizes
+
+### Notes
+
+- Android updates the home-screen icon on its own when Chrome next checks the app (can take up to a day; it may ask "Update app icon?")
+- iPhone keeps the old icon until the app is removed and added to the home screen again
+
+---
+
 ## 1.6.0 - Programs
 
 **Date:** 2026-09-26

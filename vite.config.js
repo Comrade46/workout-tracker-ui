@@ -81,8 +81,10 @@ export default defineConfig({
                 description:
                     "Track workouts, exercises, sets and fitness progress.",
 
-                theme_color: "#2563eb",
-                background_color: "#0f172a",
+                // Matches the black logo, so the launch screen and the
+                // icon look like one piece.
+                theme_color: "#0b0b0b",
+                background_color: "#0b0b0b",
 
                 display: "standalone",
                 orientation: "portrait-primary",

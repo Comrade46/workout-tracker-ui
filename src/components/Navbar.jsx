@@ -142,8 +142,7 @@ function Navbar() {
 
                         object-fit: cover;
 
-                        box-shadow:
-                            0 4px 10px rgba(37, 99, 235, 0.22);
+                        box-shadow: var(--wt-shadow-small);
                     }
 
                     .wt-brand-content {
