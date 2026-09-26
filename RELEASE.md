@@ -10,6 +10,31 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.6.0 - Programs
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
+
+### New features
+
+- **Programs** section (menu, dashboard "Start Workout" and Quick Access) with a Beginner / Intermediate / Advanced filter
+- **30-Day Full Body Challenge** at 3 levels: home, no equipment, rest every 4th day, about 10% harder each week; 30-day grid with ✓ progress and "Continue: Day N"
+- **Muscle-building splits**
+  - 3-Day Full Body Builder (Beginner, gym)
+  - 4-Day Muscle Building Split (Intermediate): Chest & Shoulders / Back & Traps / Arms / Legs & Core
+  - 5-Day V-Taper Split (Advanced): Back width + rear delts / Chest + side delts / Legs / Back thickness + delts / Arms + delts, plus an Abs day and waist tips
+- **Focus areas**: Chest, Back, Shoulders, Arms, Legs, Abs & Core, each at 3 levels (18 workouts)
+- Every workout page lists its exercises with picture, sets x reps / time, rest and "How to do it"; one tap starts the guided player
+- Progress is saved with the workout (✓ on every device); History shows the program and day
+- 38 new built-in exercises (added by the server) with pictures, e.g. Pull-Ups, Face Pulls, Dumbbell Shrugs, Skull Crushers, Lying Leg Curl, Crunches, Side Plank
+
+### Notes
+
+- 24 programs, 100 workouts, 72 exercises; every program exercise exists in the library with the correct TIME / REPS type
+- Six exercises still use an icon instead of a photo (Jumping Jacks, High Knees, Wall Sit, Pike Push-Ups, Burpees, Doorframe Rows). Real photos will replace the animations in a later update.
+
+---
+
 ## 1.5.0 - Lavender light theme
 
 **Date:** 2026-09-26

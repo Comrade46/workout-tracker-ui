@@ -4,6 +4,11 @@ import api from "../api/axiosConfig";
 import ExerciseImage from "./ExerciseImage";
 import ExerciseHowTo from "./ExerciseHowTo";
 import {
+    getProgram,
+    getProgramDay,
+    programMarker
+} from "../data/programs";
+import {
     beep,
     describeTarget,
     isSoundOn,
@@ -123,7 +128,16 @@ function getExerciseOrder(exercise) {
 }
 
 function WorkoutPlayer() {
-    const { planId } = useParams();
+    // Either a saved plan (/workout-player/:planId) or a ready-made
+    // program day (/programs/:programId/:dayKey/play).
+    const { planId, programId, dayKey } = useParams();
+
+    const program = programId ? getProgram(programId) : null;
+    const programDay = program ? getProgramDay(program, dayKey) : null;
+
+    const backPath = programId
+        ? `/programs/${programId}/${dayKey}`
+        : "/workout-plans";
     const navigate = useNavigate();
 
     const [exercises, setExercises] = useState([]);
@@ -262,22 +276,74 @@ function WorkoutPlayer() {
                 setLoadError("");
                 setSaveError("");
 
-                if (!planId) {
-                    setLoadError(
-                        "Workout plan ID is missing."
+                let responseData;
+
+                if (programId) {
+                    if (!programDay || programDay.rest) {
+                        setLoadError(
+                            "This program workout was not found."
+                        );
+                        return;
+                    }
+
+                    // Match the program's exercises to the library by name;
+                    // TIME / REPS comes from the library.
+                    const libraryResponse =
+                        await api.get("/exercises");
+
+                    const byName = new Map(
+                        (Array.isArray(libraryResponse.data)
+                            ? libraryResponse.data
+                            : []
+                        ).map((exercise) => [
+                            String(exercise.name).toLowerCase(),
+                            exercise
+                        ])
                     );
-                    return;
+
+                    responseData = programDay.exercises
+                        .map((item, index) => {
+                            const exercise = byName.get(item.name.toLowerCase());
+
+                            if (!exercise) {
+                                return null;
+                            }
+
+                            const isTime = exercise.trackingType === "TIME";
+
+                            return {
+                                exerciseId: exercise.id,
+                                exerciseName: exercise.name,
+                                category: exercise.category,
+                                equipment: exercise.equipment,
+                                trackingType: exercise.trackingType,
+                                targetValue: isTime
+                                    ? item.seconds ?? exercise.durationSeconds ?? 30
+                                    : item.reps ?? exercise.defaultReps ?? 12,
+                                targetSets: item.sets,
+                                restSeconds: item.rest,
+                                exerciseOrder: index + 1
+                            };
+                        })
+                        .filter(Boolean);
+                } else {
+                    if (!planId) {
+                        setLoadError(
+                            "Workout plan ID is missing."
+                        );
+                        return;
+                    }
+
+                    const response =
+                        await api.get(
+                            `/workout-plan-exercises/workout-plans/${planId}/exercises`
+                        );
+
+                    responseData =
+                        Array.isArray(response.data)
+                            ? response.data
+                            : [];
                 }
-
-                const response =
-                    await api.get(
-                        `/workout-plan-exercises/workout-plans/${planId}/exercises`
-                    );
-
-                const responseData =
-                    Array.isArray(response.data)
-                        ? response.data
-                        : [];
 
                 const sortedExercises =
                     [...responseData].sort(
@@ -361,7 +427,7 @@ function WorkoutPlayer() {
             } finally {
                 setLoading(false);
             }
-        }, [planId]);
+        }, [planId, programId, programDay]);
 
     useEffect(() => {
         loadExercises();
@@ -1095,8 +1161,11 @@ function WorkoutPlayer() {
                             "T"
                         )[0],
 
-                notes:
-                    `Completed workout plan: ${planId}`,
+                notes: program
+                    ? `${program.title} (${program.level}) - ${programDay.title}` +
+                      `${programDay.subtitle ? `: ${programDay.subtitle}` : ""} ` +
+                      programMarker(programId, dayKey)
+                    : `Completed workout plan: ${planId}`,
 
                 durationMinutes:
                     elapsedMinutes,
@@ -1420,9 +1489,7 @@ function WorkoutPlayer() {
                 <button
                     type="button"
                     onClick={() =>
-                        navigate(
-                            "/workout-plans"
-                        )
+                        navigate(backPath)
                     }
                     style={
                         styles.primaryButton
@@ -1585,9 +1652,7 @@ function WorkoutPlayer() {
                         <button
                             type="button"
                             onClick={() =>
-                                navigate(
-                                    "/workout-plans"
-                                )
+                                navigate(backPath)
                             }
                             style={
                                 styles.secondaryButton
@@ -1622,9 +1687,7 @@ function WorkoutPlayer() {
                 <button
                     type="button"
                     onClick={() =>
-                        navigate(
-                            "/workout-plans"
-                        )
+                        navigate(backPath)
                     }
                     style={
                         styles.primaryButton
@@ -1660,9 +1723,7 @@ function WorkoutPlayer() {
                     <button
                         type="button"
                         onClick={() =>
-                            navigate(
-                                "/workout-plans"
-                            )
+                            navigate(backPath)
                         }
                         style={
                             styles.backButton

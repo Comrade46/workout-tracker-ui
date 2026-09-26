@@ -281,7 +281,7 @@ function Dashboard() {
 
                     <button
                         onClick={() =>
-                            navigate("/workout-plans")
+                            navigate("/programs")
                         }
                         className="dashboard-primary-button" style={styles.primaryButton}
                     >
@@ -385,6 +385,25 @@ function Dashboard() {
                     </h2>
 
                     <div className="dashboard-quick-grid" style={styles.quickGrid}>
+
+                        <button
+                            onClick={() =>
+                                navigate("/programs")
+                            }
+                            className="dashboard-quick-card" style={styles.quickCard}
+                        >
+                            <span style={styles.quickIcon}>
+                                🏆
+                            </span>
+
+                            <strong>
+                                Programs
+                            </strong>
+
+                            <span style={styles.quickText}>
+                                30-day challenge, splits and focus workouts
+                            </span>
+                        </button>
 
                         <button
                             onClick={() =>

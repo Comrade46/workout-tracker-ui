@@ -27,6 +27,9 @@ const ProgressTracking = lazy(() => import("./components/ProgressTracking"));
 const Exercises = lazy(() => import("./components/Exercises"));
 const WorkoutHistory = lazy(() => import("./components/WorkoutHistory"));
 const InstallPage = lazy(() => import("./components/InstallPage"));
+const ProgramsPage = lazy(() => import("./components/ProgramsPage"));
+const ProgramDetailPage = lazy(() => import("./components/ProgramDetailPage"));
+const ProgramWorkoutPage = lazy(() => import("./components/ProgramWorkoutPage"));
 
 
 function PageLoading() {
@@ -159,6 +162,43 @@ function AppContent() {
                 <Route
                     path="/register"
                     element={<Register />}
+                />
+
+                {/* Ready-made programs */}
+                <Route
+                    path="/programs"
+                    element={
+                        <ProtectedRoute>
+                            <ProgramsPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/programs/:programId"
+                    element={
+                        <ProtectedRoute>
+                            <ProgramDetailPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/programs/:programId/:dayKey"
+                    element={
+                        <ProtectedRoute>
+                            <ProgramWorkoutPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/programs/:programId/:dayKey/play"
+                    element={
+                        <ProtectedRoute>
+                            <WorkoutPlayer />
+                        </ProtectedRoute>
+                    }
                 />
 
                 {/* Public "Get the app" page */}

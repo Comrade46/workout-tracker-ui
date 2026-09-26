@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cleanProgramNotes } from "../data/programs";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import "./WorkoutHistory.css";
@@ -377,7 +378,7 @@ function WorkoutHistory() {
                                                     styles.cardTitle
                                                 }
                                             >
-                                                {session.notes ||
+                                                {cleanProgramNotes(session.notes) ||
                                                     "Workout Session"}
                                             </h2>
                                         </div>
@@ -556,7 +557,7 @@ function WorkoutHistory() {
                                             styles.modalNotes
                                         }
                                     >
-                                        {selectedSession.notes ||
+                                        {cleanProgramNotes(selectedSession.notes) ||
                                             "Completed Workout"}
                                     </p>
                                 </div>

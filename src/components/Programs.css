@@ -1,0 +1,510 @@
+/* =========================================================
+   PROGRAMS (list, program detail, workout detail)
+   All colours come from the theme (Storm dark / Lavender light).
+   ========================================================= */
+
+.wt-prog-page {
+    min-height: calc(100vh - 70px);
+    padding: 28px 16px 110px;
+    background: var(--wt-page-background);
+    color: var(--wt-text-primary);
+}
+
+.wt-prog-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.wt-prog-eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--wt-accent);
+    text-transform: uppercase;
+}
+
+.wt-prog-title {
+    margin: 6px 0 6px;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.wt-prog-subtitle {
+    margin: 0;
+    color: var(--wt-text-secondary);
+    line-height: 1.55;
+}
+
+.wt-prog-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+    color: var(--wt-accent);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* ---------- Level filter chips ---------- */
+
+.wt-prog-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0 8px;
+}
+
+.wt-prog-chip {
+    min-height: 38px;
+    padding: 8px 16px;
+    border: 1px solid var(--wt-border);
+    border-radius: 999px;
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.wt-prog-chip[aria-pressed="true"] {
+    background: var(--wt-accent);
+    border-color: var(--wt-accent);
+    color: var(--wt-on-accent);
+}
+
+/* ---------- Sections and cards ---------- */
+
+.wt-prog-section {
+    margin-top: 30px;
+}
+
+.wt-prog-section h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+}
+
+.wt-prog-section > p {
+    margin: 0 0 14px;
+    color: var(--wt-text-secondary);
+    font-size: 14px;
+}
+
+.wt-prog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.wt-prog-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--wt-border);
+    border-radius: 18px;
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    box-shadow: var(--wt-shadow-small);
+    text-decoration: none;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.wt-prog-card:hover {
+    border-color: var(--wt-accent);
+    transform: translateY(-2px);
+}
+
+.wt-prog-card-body {
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.wt-prog-card-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.wt-prog-meta {
+    font-size: 13px;
+    color: var(--wt-text-muted);
+}
+
+.wt-prog-summary {
+    font-size: 14px;
+    color: var(--wt-text-secondary);
+    line-height: 1.5;
+}
+
+.wt-prog-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.wt-prog-level {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--wt-accent-soft);
+    color: var(--wt-accent);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.wt-prog-done-badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--wt-success-soft);
+    color: var(--wt-success);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* ---------- Progress bar ---------- */
+
+.wt-prog-progress {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--wt-surface-tertiary);
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.wt-prog-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--wt-accent);
+}
+
+/* ---------- Focus areas ---------- */
+
+.wt-prog-focus-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+}
+
+.wt-prog-focus {
+    overflow: hidden;
+    border: 1px solid var(--wt-border);
+    border-radius: 18px;
+    background: var(--wt-surface);
+    box-shadow: var(--wt-shadow-small);
+}
+
+.wt-prog-focus-name {
+    padding: 12px 14px 8px;
+    font-weight: 800;
+    font-size: 17px;
+}
+
+.wt-prog-focus-levels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 0 10px 12px;
+}
+
+.wt-prog-focus-levels a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 6px 4px;
+    border: 1px solid var(--wt-border);
+    border-radius: 10px;
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+}
+
+.wt-prog-focus-levels a:hover {
+    border-color: var(--wt-accent);
+    color: var(--wt-accent);
+}
+
+/* ---------- Program header ---------- */
+
+.wt-prog-hero {
+    overflow: hidden;
+    border: 1px solid var(--wt-border);
+    border-radius: 20px;
+    background: var(--wt-surface);
+    box-shadow: var(--wt-shadow-small);
+}
+
+.wt-prog-hero-body {
+    padding: 18px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ---------- 30-day grid ---------- */
+
+.wt-prog-weeks {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.wt-prog-week-label {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--wt-text-muted);
+    margin-bottom: 6px;
+}
+
+.wt-prog-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.wt-prog-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid var(--wt-border);
+    border-radius: 14px;
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    font-weight: 800;
+    font-size: 16px;
+    text-decoration: none;
+}
+
+.wt-prog-day small {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--wt-text-muted);
+}
+
+.wt-prog-day.done {
+    background: var(--wt-accent);
+    border-color: var(--wt-accent);
+    color: var(--wt-on-accent);
+}
+
+.wt-prog-day.done small {
+    color: var(--wt-on-accent);
+}
+
+.wt-prog-day.next {
+    border: 2px solid var(--wt-accent);
+    box-shadow: 0 0 0 3px var(--wt-accent-soft);
+}
+
+.wt-prog-day.rest {
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-muted);
+}
+
+/* ---------- Day list (splits) ---------- */
+
+.wt-prog-daylist {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.wt-prog-dayrow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    border: 1px solid var(--wt-border);
+    border-radius: 16px;
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    text-decoration: none;
+}
+
+.wt-prog-dayrow:hover {
+    border-color: var(--wt-accent);
+}
+
+.wt-prog-dayrow-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.wt-prog-dayrow-title {
+    font-weight: 800;
+    font-size: 16px;
+}
+
+/* ---------- Workout detail: exercise list ---------- */
+
+.wt-prog-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 14px;
+    color: var(--wt-text-secondary);
+}
+
+.wt-prog-exlist {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.wt-prog-ex {
+    padding: 12px;
+    border: 1px solid var(--wt-border);
+    border-radius: 16px;
+    background: var(--wt-surface);
+}
+
+.wt-prog-ex-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.wt-prog-ex-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--wt-accent-soft);
+    color: var(--wt-accent);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.wt-prog-ex-name {
+    font-weight: 800;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+}
+
+.wt-prog-ex-target {
+    margin-top: 2px;
+    font-size: 14px;
+    color: var(--wt-text-secondary);
+}
+
+.wt-prog-thumb-fallback {
+    width: 96px;
+    height: 72px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--wt-surface-tertiary);
+    font-size: 28px;
+}
+
+.wt-prog-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--wt-accent-soft);
+    color: var(--wt-text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.wt-prog-warning {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--wt-danger-soft);
+    color: var(--wt-danger);
+    font-size: 14px;
+}
+
+/* ---------- Start bar ---------- */
+
+.wt-prog-start {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--wt-surface);
+    border-top: 1px solid var(--wt-border);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.wt-prog-start-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+}
+
+.wt-prog-primary {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 14px;
+    background: var(--wt-accent);
+    color: var(--wt-on-accent);
+    font-size: 17px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.wt-prog-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 12px 18px;
+    border: 1px solid var(--wt-border);
+    border-radius: 14px;
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+@media (max-width: 560px) {
+    .wt-prog-title {
+        font-size: 26px;
+    }
+
+    .wt-prog-days {
+        gap: 5px;
+    }
+
+    .wt-prog-day {
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .wt-prog-day small {
+        font-size: 9px;
+    }
+}

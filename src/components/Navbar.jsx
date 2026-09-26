@@ -6,7 +6,7 @@ import { APP_VERSION_LABEL } from "../config/appVersion";
 
 const navItems = [
     { label: "Dashboard", path: "/dashboard" },
-    { label: "Workouts", path: "/workouts" },
+    { label: "Programs", path: "/programs" },
     { label: "Workout Plans", path: "/workout-plans" },
     { label: "Exercise Library", path: "/exercises" },
     { label: "History", path: "/workout-history" },
@@ -85,7 +85,10 @@ function Navbar() {
     };
 
     const isActive = (path) => {
-        return location.pathname === path;
+        return (
+            location.pathname === path ||
+            (path === "/programs" && location.pathname.startsWith("/programs/"))
+        );
     };
 
     return (
