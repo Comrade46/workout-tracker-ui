@@ -27,8 +27,23 @@ import {
     unlockAudio,
     vibrate
 } from "../coach/workoutCoach";
-import { newClientId, saveWorkoutSafely } from "../offline/workoutOutbox";
+import {
+    newClientId,
+    pendingWorkouts,
+    saveWorkoutSafely,
+    updatePendingPayload
+} from "../offline/workoutOutbox";
 import { dateKey, estimateCalories, rememberedWeight } from "../progress/motivation";
+import {
+    FEELINGS,
+    adjustTarget,
+    badgeById,
+    earnedBadges,
+    newRecords,
+    nextIntensity,
+    personalBests,
+    planMarker
+} from "../progress/achievements";
 import "./Player.css";
 
 const READY_SECONDS = 10;
@@ -149,6 +164,17 @@ function FollowAlongPlayer() {
     const [saveState, setSaveState] = useState({ status: "idle", message: "" });
     const [summary, setSummary] = useState(null);
 
+    // Past workouts (records, badges, difficulty) and this workout's level
+    const historyRef = useRef([]);
+    const weeklyGoalRef = useRef(null);
+    const [intensity, setIntensity] = useState({ level: 0, feeling: null });
+    const [rewards, setRewards] = useState({ records: [], badges: [] });
+
+    // "How did it feel?" on the finish screen
+    const [feeling, setFeeling] = useState(null);
+    const [feelingSaved, setFeelingSaved] = useState("");
+    const pendingFeelingRef = useRef(null);
+
     const startedAtRef = useRef(null);
     const clientIdRef = useRef(newClientId());
     const lastBeepRef = useRef(null);
@@ -175,6 +201,10 @@ function FollowAlongPlayer() {
         async function load() {
             try {
                 let rows;
+
+                // Past workouts and goals (optional: the workout works without them)
+                const historyRequest = api.get("/workout-sessions").catch(() => null);
+                const bodyRequest = api.get("/users/me/body").catch(() => null);
 
                 if (programId) {
                     if (!programDay || programDay.rest) throw new Error("This program workout was not found.");
@@ -219,11 +249,31 @@ function FollowAlongPlayer() {
                     if (!cancelled && plan?.data?.name) setTitle(plan.data.name);
                 }
 
-                const list = rows.map(normalise).sort((a, b) => a.order - b.order);
+                const [historyResponse, bodyResponse] = await Promise.all([historyRequest, bodyRequest]);
+
+                const history = [
+                    ...(Array.isArray(historyResponse?.data) ? historyResponse.data : []),
+                    ...pendingWorkouts().map((entry) => entry.payload)
+                ];
+                historyRef.current = history;
+                weeklyGoalRef.current = bodyResponse?.data?.profile?.weeklyGoal || null;
+
+                // "Too easy" / "too hard" last time: targets up or down 10%.
+                const next = nextIntensity(history, programId ? `program:${programId}` : `plan:${planId}`);
+
+                const list = rows
+                    .map(normalise)
+                    .sort((a, b) => a.order - b.order)
+                    .map((exercise) => ({
+                        ...exercise,
+                        baseTarget: exercise.target,
+                        target: adjustTarget(exercise.target, exercise.tracking, next.level)
+                    }));
 
                 if (list.length === 0) throw new Error("This workout has no exercises yet.");
 
                 if (!cancelled) {
+                    setIntensity(next);
                     setExercises(list);
                     setPhase("ready");
                     startedAtRef.current = Date.now();
@@ -342,12 +392,34 @@ function FollowAlongPlayer() {
                 kcal: estimateCalories(minutes, rememberedWeight())
             });
 
+            const doneSets = entries.map(({ step: s, record }) => ({
+                exerciseId: s.exercise.exerciseId,
+                name: s.exercise.name,
+                reps: s.exercise.tracking === "REPS" ? record.reps : 0,
+                weight: s.exercise.tracking === "REPS" ? record.weight : 0,
+                durationSeconds: s.exercise.tracking === "TIME" ? record.durationSeconds : 0
+            }));
+
             if (entries.length === 0 || savedRef.current) {
                 if (entries.length === 0) setSaveState({ status: "empty", message: "" });
                 return;
             }
 
             savedRef.current = true;
+
+            // Personal records and badges earned by this workout
+            const history = historyRef.current;
+            const goal = weeklyGoalRef.current || undefined;
+            const before = new Set(earnedBadges(history, goal));
+            const thisWorkout = { workoutDate: dateKey(new Date()), durationMinutes: minutes, notes: program ? programMarker(programId, dayKey) : "", sets: doneSets };
+
+            setRewards({
+                records: newRecords(personalBests(history), doneSets),
+                badges: earnedBadges([...history, thisWorkout], goal)
+                    .filter((id) => !before.has(id))
+                    .map(badgeById)
+            });
+
             speak("Workout complete. Great job!");
             vibrate([200, 100, 200]);
             setSaveState({ status: "saving", message: "" });
@@ -355,8 +427,9 @@ function FollowAlongPlayer() {
             const payload = {
                 clientId: clientIdRef.current,
                 workoutDate: dateKey(new Date()),
-                notes: program ? `${title} ${programMarker(programId, dayKey)}` : title,
+                notes: program ? `${title} ${programMarker(programId, dayKey)}` : `${title} ${planMarker(planId)}`,
                 durationMinutes: minutes,
+                intensity: intensity.level,
                 sets: entries.map(({ step: s, record }) => ({
                     exerciseId: s.exercise.exerciseId,
                     setNumber: s.set,
@@ -371,8 +444,43 @@ function FollowAlongPlayer() {
                 .then((result) => setSaveState({ status: result.status, message: result.message || "" }))
                 .catch(() => setSaveState({ status: "failed", message: "The workout could not be saved." }));
         },
-        [steps, program, programId, dayKey, title]
+        [steps, program, programId, planId, dayKey, title, intensity.level]
     );
+
+    const storeFeeling = useCallback(async (value) => {
+        // Still in the phone's queue: send it together with the workout.
+        if (updatePendingPayload(clientIdRef.current, { feeling: value })) {
+            setFeelingSaved("saved");
+            return;
+        }
+
+        try {
+            await api.put("/workout-sessions/feeling", { clientId: clientIdRef.current, feeling: value });
+            setFeelingSaved("saved");
+        } catch {
+            setFeelingSaved("error");
+        }
+    }, []);
+
+    const chooseFeeling = (value) => {
+        setFeeling(value);
+        setFeelingSaved("");
+
+        if (saveState.status === "saving") {
+            pendingFeelingRef.current = value;
+        } else {
+            storeFeeling(value);
+        }
+    };
+
+    // The answer came while the workout was still uploading.
+    useEffect(() => {
+        if (saveState.status !== "saving" && pendingFeelingRef.current) {
+            const value = pendingFeelingRef.current;
+            pendingFeelingRef.current = null;
+            storeFeeling(value);
+        }
+    }, [saveState.status, storeFeeling]);
 
     // Record the current step and move on (rest, next step or finish).
     const completeStep = useCallback(
@@ -539,6 +647,62 @@ function FollowAlongPlayer() {
                         </div>
                     )}
 
+                    {rewards.records.length > 0 && (
+                        <div className="wt-fp-rewards">
+                            <div className="wt-fp-rewards-title">🏆 New personal record{rewards.records.length === 1 ? "" : "s"}!</div>
+                            {rewards.records.map((record) => (
+                                <div key={record.name} className="wt-fp-reward">
+                                    <strong>{record.name}</strong> · {record.text}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {rewards.badges.length > 0 && (
+                        <div className="wt-fp-rewards">
+                            <div className="wt-fp-rewards-title">🎉 New badge{rewards.badges.length === 1 ? "" : "s"}!</div>
+                            <div className="wt-fp-badges">
+                                {rewards.badges.map((badge) => (
+                                    <div key={badge.id} className="wt-fp-badge">
+                                        <span aria-hidden="true">{badge.icon}</span>
+                                        {badge.title}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {summary?.sets > 0 && status !== "empty" && (
+                        <div className="wt-fp-feel">
+                            <div className="wt-fp-feel-title" id="wt-fp-feel-title">How did it feel?</div>
+                            <div className="wt-fp-feel-options" role="group" aria-labelledby="wt-fp-feel-title">
+                                {FEELINGS.map((option) => (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        className={`wt-fp-feel-option${feeling === option.value ? " selected" : ""}`}
+                                        aria-pressed={feeling === option.value}
+                                        onClick={() => chooseFeeling(option.value)}
+                                    >
+                                        <span aria-hidden="true">{option.icon}</span>
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                            {feeling && (
+                                <p className="wt-fp-muted" role="status">
+                                    {feelingSaved === "error"
+                                        ? "Your answer couldn't be saved - check your internet."
+                                        : feeling === "EASY"
+                                            ? "Got it - next time this workout is about 10% harder 💪"
+                                            : feeling === "HARD"
+                                                ? "Got it - next time this workout is about 10% easier."
+                                                : "Great - next time stays the same."}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     <div className={`wt-fp-save ${status}`} role="status">
                         {status === "saving" && "Saving your workout…"}
                         {status === "uploaded" && "✓ Saved to your history"}
@@ -652,6 +816,16 @@ function FollowAlongPlayer() {
                                 ?
                             </button>
                         </h1>
+
+                        {phase === "ready" && intensity.level !== 0 && (
+                            <div className="wt-fp-level" role="note">
+                                {intensity.level > 0
+                                    ? `💪 A bit harder today (+${intensity.level * 10}%)`
+                                    : `😌 A bit easier today (${intensity.level * 10}%)`}
+                                {intensity.feeling === "EASY" && " - last time felt too easy"}
+                                {intensity.feeling === "HARD" && " - last time felt too hard"}
+                            </div>
+                        )}
 
                         {phase === "ready" && (
                             <div className="wt-fp-next-target">

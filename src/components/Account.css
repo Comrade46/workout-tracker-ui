@@ -433,6 +433,43 @@
     color: var(--wt-text-secondary);
 }
 
+/* Badges grid */
+.wt-me-badges {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.wt-me-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    border-radius: 14px;
+    border: 1px dashed var(--wt-border-strong);
+    background: var(--wt-surface-secondary);
+    text-align: center;
+    font-size: 13px;
+}
+
+.wt-me-badge span:last-child {
+    color: var(--wt-text-secondary);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.wt-me-badge.earned {
+    border-style: solid;
+    border-color: var(--wt-accent);
+    background: var(--wt-accent-soft);
+}
+
+.wt-me-badge-icon {
+    font-size: 28px;
+    line-height: 1.2;
+}
+
 /* On / off switch */
 .wt-me-switch {
     position: relative;

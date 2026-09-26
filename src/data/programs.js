@@ -414,7 +414,9 @@ export function completedProgramDays(sessions) {
 
 // Text shown in history instead of the raw marker
 export function cleanProgramNotes(notes) {
-    return String(notes || "").replace(/\s*\[program:[a-z0-9-]+:[a-z0-9-]+\]/g, "").trim();
+    return String(notes || "")
+        .replace(/\s*\[(program:[a-z0-9-]+:[a-z0-9-]+|plan:\d+)\]/g, "")
+        .trim();
 }
 
 export function describeSetTarget(exercise, trackingType) {

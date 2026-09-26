@@ -34,6 +34,24 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 - **Me (Profile) as a menu**: rows grouped in My body / Workouts / Account / App; tap a row to open it (Body & goals, Workouts waiting to upload, Change password, Send feedback), links for Weight & BMI, History, Admin, Install, plus a voice-coach switch, theme, version and Log out
 - **App-icon shortcuts**: long-press the Workout Tracker icon on the phone for "Start workout", "Log weight" and "Workout history"
 
+### Motivation
+
+- **Continue your plan** on Home: the next workout of the program you're doing (30-day challenge: next unfinished day; splits: the day after the last one), ▶ Start in one tap. New users get a starting suggestion that fits their main goal; a finished challenge suggests the next level
+- **Personal records** on the finish screen (more reps, heavier weight or longer hold than ever before for that exercise)
+- **Badges**: first workout, 10 / 25 / 50 / 100 workouts, 2 / 4 / 8-week streaks, 10 hours trained, challenge finisher - new ones celebrated on the finish screen, all of them in Me › Badges
+- **How did it feel?** after a workout (Too easy / Just right / Too hard): the next workout of the same program or plan is about 10% harder / easier (up to ±30%), shown on the Ready screen. Works offline too (the answer travels with the waiting workout)
+
+### Tidier
+
+- Workout Plans: Edit and Delete moved into a "⋯" menu, away from Start
+- Removed about 4,600 lines of unused code (an old copy of Workout Plans, an unused exercise library page, the hidden "Workouts" page - its old address now opens Programs)
+
+### Server (API)
+
+- Workouts store `feeling` (EASY / RIGHT / HARD) and `intensity` (-3..+3); new `PUT /api/workout-sessions/feeling` (by the phone's clientId)
+- New columns `workout_sessions.feeling`, `workout_sessions.intensity` (created automatically on start)
+- Plan workouts carry a `[plan:ID]` marker in their notes (hidden in the app) so each plan keeps its own difficulty
+
 ### Fixes
 
 - New home-screen icon: icon files have new names so phones pick up the new logo

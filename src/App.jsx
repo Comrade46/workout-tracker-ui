@@ -30,7 +30,6 @@ import { startBackgroundSync } from "./offline/workoutOutbox";
  * caches every page for offline use after the first visit.
  */
 const Dashboard = lazy(() => import("./components/Dashboard"));
-const Workouts = lazy(() => import("./components/Workouts"));
 const WorkoutPlans = lazy(() => import("./components/WorkoutPlans"));
 // Follow-along player (Ready -> exercise -> rest -> finish)
 const WorkoutPlayer = lazy(() => import("./player/FollowAlongPlayer"));
@@ -338,17 +337,10 @@ function AppContent() {
                 />
 
 
-                {/* =========================
-                    WORKOUTS
-                ========================= */}
-
+                {/* Old address: workouts now live under Programs */}
                 <Route
                     path="/workouts"
-                    element={
-                        <ProtectedRoute>
-                            <Workouts />
-                        </ProtectedRoute>
-                    }
+                    element={<Navigate to="/programs" replace />}
                 />
 
 

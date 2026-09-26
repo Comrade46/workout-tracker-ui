@@ -114,6 +114,9 @@ function categoryMatches(
 }
 
 function WorkoutPlans() {
+    // Plan whose "⋯" menu (Edit / Delete) is open
+    const [menuPlanId, setMenuPlanId] = useState(null);
+
 
     const navigate = useNavigate();
 
@@ -1125,35 +1128,47 @@ function WorkoutPlans() {
                                             ▶ Start Workout
                                         </button>
 
+                                        {/* Edit / Delete live in a menu so Delete
+                                            is never one slip away from Start. */}
                                         <button
                                             type="button"
-                                            style={
-                                                styles.editButton
-                                            }
+                                            style={styles.moreButton}
                                             onClick={() =>
-                                                openEditForm(
-                                                    plan
-                                                )
+                                                setMenuPlanId((open) => open === plan.id ? null : plan.id)
                                             }
+                                            aria-expanded={menuPlanId === plan.id}
+                                            aria-label={`More options for ${plan.name}`}
                                         >
-                                            ✎ Edit
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            style={
-                                                styles.deleteButton
-                                            }
-                                            onClick={() =>
-                                                deletePlan(
-                                                    plan
-                                                )
-                                            }
-                                        >
-                                            🗑 Delete
+                                            ⋯
                                         </button>
 
                                     </div>
+
+                                    {menuPlanId === plan.id && (
+                                        <div style={styles.moreMenu}>
+                                            <button
+                                                type="button"
+                                                style={styles.editButton}
+                                                onClick={() => {
+                                                    setMenuPlanId(null);
+                                                    openEditForm(plan);
+                                                }}
+                                            >
+                                                ✎ Edit plan
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                style={styles.deleteButton}
+                                                onClick={() => {
+                                                    setMenuPlanId(null);
+                                                    deletePlan(plan);
+                                                }}
+                                            >
+                                                🗑 Delete plan
+                                            </button>
+                                        </div>
+                                    )}
 
                                 </div>
                             )
@@ -1841,6 +1856,33 @@ const styles = {
         color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "800"
+    },
+
+    moreButton: {
+        width: "46px",
+        flexShrink: 0,
+        border:
+            "1px solid var(--wt-border)",
+        borderRadius: "10px",
+        padding: "8px 0",
+        backgroundColor:
+            "var(--wt-surface-secondary)",
+        color:
+            "var(--wt-text-primary)",
+        cursor: "pointer",
+        fontSize: "20px",
+        fontWeight: "800",
+        lineHeight: 1
+    },
+
+    moreMenu: {
+        display: "flex",
+        gap: "8px",
+        flexWrap: "wrap",
+        marginTop: "10px",
+        paddingTop: "10px",
+        borderTop:
+            "1px solid var(--wt-border)"
     },
 
     editButton: {

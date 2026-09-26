@@ -48,6 +48,21 @@ function updateEntry(clientId, changes) {
     ));
 }
 
+// Change a waiting workout before it is uploaded (e.g. add "feeling").
+export function updatePendingPayload(clientId, changes) {
+    const exists = readAll().some((entry) => entry.clientId === clientId);
+
+    if (exists) {
+        writeAll(readAll().map((entry) =>
+            entry.clientId === clientId
+                ? { ...entry, payload: { ...entry.payload, ...changes } }
+                : entry
+        ));
+    }
+
+    return exists;
+}
+
 export function removePendingWorkout(clientId) {
     writeAll(readAll().filter((entry) => entry.clientId !== clientId));
 }

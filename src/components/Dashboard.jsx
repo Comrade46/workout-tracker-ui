@@ -6,6 +6,7 @@ import api from "../api/axiosConfig";
 import PendingSyncBanner from "./PendingSyncBanner";
 import WeeklyGoalCard from "../progress/WeeklyGoalCard";
 import BodyCard from "../progress/BodyCard";
+import ContinueCard from "../progress/ContinueCard";
 import useBody from "../progress/useBody";
 import { allWorkouts } from "../progress/motivation";
 import { usePendingWorkouts } from "../offline/workoutOutbox";
@@ -272,6 +273,15 @@ function Dashboard() {
                         Start Workout
                     </button>
                 </div>
+
+                {/* =========================
+                    CONTINUE YOUR PLAN
+                ========================= */}
+
+                <ContinueCard
+                    workouts={workouts}
+                    fitnessGoal={body.profile.fitnessGoal}
+                />
 
                 {/* =========================
                     THIS WEEK + BODY

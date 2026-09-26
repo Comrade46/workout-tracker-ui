@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import BodyGoalsForm from "../progress/BodyGoalsForm";
+import { BADGES, earnedBadges } from "../progress/achievements";
 import ThemeToggle from "../theme/ThemeToggle";
 import api from "../api/axiosConfig";
 import { APP_VERSION } from "../config/appVersion";
@@ -12,6 +13,7 @@ import {
 } from "../auth/session";
 import { isSoundOn, setSoundOn, unlockAudio } from "../coach/workoutCoach";
 import {
+    pendingWorkouts,
     removePendingWorkout,
     syncPendingWorkouts,
     usePendingWorkouts
@@ -29,7 +31,7 @@ function formatDate(value) {
 
 // Program marker "[program:...]" is for the app, not for people.
 function workoutTitle(payload) {
-    return (payload?.notes || "Workout").replace(/\s*\[program:[^\]]*\]\s*/g, "").trim() || "Workout";
+    return (payload?.notes || "Workout").replace(/\s*\[(program|plan):[^\]]*\]\s*/g, "").trim() || "Workout";
 }
 
 function setCount(payload) {
@@ -188,6 +190,59 @@ function UploadQueue() {
                         )}
                     </div>
                 ))}
+            </div>
+        </>
+    );
+}
+
+// Earned badges in colour, the rest greyed out with how to get them.
+function BadgesPanel() {
+    const [earned, setEarned] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        Promise.all([api.get("/workout-sessions"), api.get("/users/me/body").catch(() => null)])
+            .then(([sessions, body]) => {
+                if (cancelled) return;
+
+                const workouts = [
+                    ...(Array.isArray(sessions.data) ? sessions.data : []),
+                    ...pendingWorkouts().map((entry) => entry.payload)
+                ];
+                setEarned(new Set(earnedBadges(workouts, body?.data?.profile?.weeklyGoal || undefined)));
+            })
+            .catch(() => {
+                if (!cancelled) setEarned(new Set());
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    if (!earned) {
+        return <div className="wt-acc-empty">Loading…</div>;
+    }
+
+    return (
+        <>
+            <p className="wt-acc-card-hint">
+                {earned.size} of {BADGES.length} earned. Keep training to unlock the rest!
+            </p>
+
+            <div className="wt-me-badges">
+                {BADGES.map((badge) => {
+                    const has = earned.has(badge.id);
+
+                    return (
+                        <div key={badge.id} className={`wt-me-badge${has ? " earned" : ""}`}>
+                            <span className="wt-me-badge-icon" aria-hidden="true">{has ? badge.icon : "🔒"}</span>
+                            <strong>{badge.title}</strong>
+                            <span>{has ? "Earned ✓" : badge.hint}</span>
+                        </div>
+                    );
+                })}
             </div>
         </>
     );
@@ -513,6 +568,17 @@ function ProfilePage() {
                                 onToggle={() => toggle("uploads")}
                             >
                                 <UploadQueue />
+                            </MenuRow>
+
+                            <MenuRow
+                                id="badges"
+                                icon="🏅"
+                                title="Badges"
+                                subtitle="Rewards for workouts and streaks"
+                                open={openRow === "badges"}
+                                onToggle={() => toggle("badges")}
+                            >
+                                <BadgesPanel />
                             </MenuRow>
 
                             <MenuLink icon="📅" title="Workout history" subtitle="Calendar and all past workouts" to="/workout-history" />
