@@ -1,0 +1,543 @@
+/* =========================================================
+   FOLLOW-ALONG PLAYER - full screen, one step at a time.
+   All colours come from the theme (Storm dark / Lavender light).
+   ========================================================= */
+
+.wt-fp {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    background: var(--wt-page-background);
+    color: var(--wt-text-primary);
+}
+
+.wt-fp *,
+.wt-fp *::before,
+.wt-fp *::after {
+    box-sizing: border-box;
+}
+
+.wt-fp button {
+    font-family: inherit;
+}
+
+.wt-fp button:focus-visible,
+.wt-fp a:focus-visible {
+    outline: 3px solid var(--wt-accent);
+    outline-offset: 2px;
+}
+
+.wt-fp-center {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.wt-fp-muted {
+    color: var(--wt-text-secondary);
+    font-size: 14px;
+    line-height: 1.45;
+    margin: 0;
+}
+
+/* ---------- top bar ---------- */
+
+.wt-fp-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+}
+
+.wt-fp-icon {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.wt-fp-progress {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+}
+
+.wt-fp-progress span {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--wt-surface-tertiary);
+}
+
+.wt-fp-progress span.now {
+    background: var(--wt-accent-soft);
+    box-shadow: inset 0 0 0 1px var(--wt-accent);
+}
+
+.wt-fp-progress span.done {
+    background: var(--wt-accent);
+}
+
+/* ---------- picture + info ---------- */
+
+.wt-fp-media {
+    margin-top: 8px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+}
+
+.wt-fp-thumb {
+    display: grid;
+    place-items: center;
+    height: 84px;
+    border-radius: 12px;
+    background: var(--wt-surface-secondary);
+    font-size: 28px;
+}
+
+.wt-fp-thumb.big {
+    height: min(34vh, 280px);
+    font-size: 64px;
+}
+
+.wt-fp-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 0 8px;
+    text-align: center;
+}
+
+.wt-fp-meta {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    color: var(--wt-accent);
+    text-transform: uppercase;
+}
+
+.wt-fp-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.wt-fp-help {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-primary);
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.wt-fp-howto {
+    width: 100%;
+    text-align: left;
+}
+
+.wt-fp-reps {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--wt-text-primary);
+}
+
+.wt-fp-adjust {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.wt-fp-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px 4px 12px;
+    border-radius: 999px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    font-size: 14px;
+}
+
+.wt-fp-stepper-label {
+    color: var(--wt-text-secondary);
+}
+
+.wt-fp-stepper strong {
+    min-width: 48px;
+    text-align: center;
+}
+
+.wt-fp-stepper button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface-secondary);
+    color: var(--wt-text-primary);
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* ---------- countdown ring ---------- */
+
+.wt-fp-ring {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 4px auto;
+}
+
+.wt-fp-ring.medium {
+    width: 120px;
+    height: 120px;
+}
+
+.wt-fp-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.wt-fp-ring-track,
+.wt-fp-ring-value {
+    fill: none;
+    stroke-width: 8;
+}
+
+.wt-fp-ring-track {
+    stroke: var(--wt-surface-tertiary);
+}
+
+.wt-fp-ring-value {
+    stroke: var(--wt-accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.2s linear;
+}
+
+.wt-fp-ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.wt-fp-ring-label strong {
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.wt-fp-ring.medium .wt-fp-ring-label strong {
+    font-size: 40px;
+}
+
+.wt-fp-ring-label small {
+    font-size: 13px;
+    color: var(--wt-text-secondary);
+    font-weight: 700;
+}
+
+/* ---------- controls ---------- */
+
+.wt-fp-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding-top: 10px;
+}
+
+.wt-fp-main,
+.wt-fp-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 56px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 17px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.wt-fp-main {
+    border: none;
+    background: var(--wt-button-background);
+    color: var(--wt-button-text);
+}
+
+.wt-fp-secondary {
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+}
+
+.wt-fp-secondary.danger {
+    color: var(--wt-danger);
+    border-color: var(--wt-danger-border);
+}
+
+.wt-fp-main.wide,
+.wt-fp-secondary.wide {
+    flex: 1;
+    max-width: 320px;
+    width: 100%;
+}
+
+.wt-fp-round {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--wt-border);
+    background: var(--wt-surface);
+    color: var(--wt-text-primary);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.wt-fp-round:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.wt-fp-link {
+    border: none;
+    background: none;
+    color: var(--wt-accent);
+    font-size: 15px;
+    font-weight: 800;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.wt-fp-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+}
+
+/* ---------- rest ---------- */
+
+.wt-fp-rest {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    text-align: center;
+}
+
+.wt-fp-eyebrow {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--wt-accent);
+}
+
+.wt-fp-next {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 16px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    text-align: left;
+}
+
+.wt-fp-next-name {
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.wt-fp-next-target {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--wt-accent);
+}
+
+/* ---------- pause menu ---------- */
+
+.wt-fp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.wt-fp-sheet {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px calc(20px + env(safe-area-inset-bottom));
+    border-radius: 22px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    color: var(--wt-text-primary);
+    text-align: center;
+}
+
+.wt-fp-sheet h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+}
+
+.wt-fp-sheet .wide {
+    max-width: none;
+}
+
+/* ---------- finish ---------- */
+
+.wt-fp-finish-card {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 28px 20px;
+    border-radius: 22px;
+    background: var(--wt-surface);
+    border: 1px solid var(--wt-border);
+    box-shadow: var(--wt-shadow-small);
+}
+
+.wt-fp-finish-icon {
+    font-size: 56px;
+    line-height: 1;
+}
+
+.wt-fp-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.wt-fp-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.wt-fp-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 8px;
+    border-radius: 14px;
+    background: var(--wt-surface-secondary);
+    border: 1px solid var(--wt-border);
+}
+
+.wt-fp-stats strong {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.wt-fp-stats span {
+    font-size: 12px;
+    color: var(--wt-text-secondary);
+}
+
+.wt-fp-save {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.45;
+    background: var(--wt-surface-secondary);
+    border: 1px solid var(--wt-border);
+}
+
+.wt-fp-save.uploaded {
+    background: var(--wt-success-soft);
+    border-color: var(--wt-success);
+}
+
+.wt-fp-save.waiting {
+    background: var(--wt-accent-soft);
+    border-color: var(--wt-accent);
+}
+
+.wt-fp-save.failed {
+    background: var(--wt-danger-soft);
+    border-color: var(--wt-danger-border);
+}
+
+.wt-fp-finish-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.wt-fp-finish-actions .wt-fp-main,
+.wt-fp-finish-actions .wt-fp-secondary {
+    width: 100%;
+}
+
+/* Short phones: smaller picture so the buttons stay on screen */
+@media (max-height: 700px) {
+    .wt-fp-ring {
+        width: 140px;
+        height: 140px;
+    }
+
+    .wt-fp-reps {
+        font-size: 52px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wt-fp-ring-value {
+        transition: none;
+    }
+}

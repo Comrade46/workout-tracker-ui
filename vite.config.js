@@ -63,12 +63,14 @@ export default defineConfig({
              */
             registerType: "prompt",
 
+            // Icon files carry a version in their names: a new name makes
+            // phones fetch the new home-screen icon instead of a cached one.
             includeAssets: [
-                "favicon.png",
-                "icons/icon-192.png",
-                "icons/icon-512.png",
-                "icons/icon-maskable-512.png",
-                "icons/apple-touch-icon.png"
+                "favicon-v2.png",
+                "icons/icon-192-v2.png",
+                "icons/icon-512-v2.png",
+                "icons/icon-maskable-512-v2.png",
+                "icons/apple-touch-icon-v2.png"
             ],
 
             manifest: {
@@ -96,13 +98,13 @@ export default defineConfig({
 
                 icons: [
                     {
-                        src: "/icons/icon-192.png",
+                        src: "/icons/icon-192-v2.png",
                         sizes: "192x192",
                         type: "image/png",
                         purpose: "any"
                     },
                     {
-                        src: "/icons/icon-512.png",
+                        src: "/icons/icon-512-v2.png",
                         sizes: "512x512",
                         type: "image/png",
                         purpose: "any"
@@ -110,7 +112,7 @@ export default defineConfig({
                     {
                         // Logo shrunk into the safe zone so Android's
                         // round / squircle mask never cuts it off
-                        src: "/icons/icon-maskable-512.png",
+                        src: "/icons/icon-maskable-512-v2.png",
                         sizes: "512x512",
                         type: "image/png",
                         purpose: "maskable"

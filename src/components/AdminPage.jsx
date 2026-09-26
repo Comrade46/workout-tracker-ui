@@ -310,9 +310,9 @@ function AdminPage() {
                                         <div className="wt-acc-item-main">
                                             <div className="wt-acc-item-title">
                                                 {user.username}
-                                                {user.admin && <span className="wt-acc-badge">Admin</span>}
+                                                {user.admin && <>{" "}<span className="wt-acc-badge">Admin</span></>}
                                                 {user.mustChangePassword && (
-                                                    <span className="wt-acc-badge">Temporary password</span>
+                                                    <>{" "}<span className="wt-acc-badge">Temporary password</span></>
                                                 )}
                                             </div>
                                             <div className="wt-acc-meta">{user.email}</div>

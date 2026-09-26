@@ -1,5 +1,5 @@
 {
-    "version": "1.8.0",
+    "version": "1.9.0",
     "name": "Workout Tracker",
-    "message": "Workout Tracker 1.8.0 is available: weekly goal and streaks, workout calendar, weight chart, BMI and calorie estimates."
+    "message": "Workout Tracker 1.9.0 is available: a new full-screen workout player like Home Workout - Ready countdown, Done, Pause menu, Rest, Skip and Previous."
 }

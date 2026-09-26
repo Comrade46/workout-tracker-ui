@@ -10,10 +10,35 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
-## 1.8.0 - Progress & motivation
+## 1.9.0 - New workout player
 
 **Date:** 2026-09-26
 **Deployment status:** Not deployed yet
+
+### New workout player (like the Home Workout app)
+
+- Full screen, one step at a time: **Ready** (10 s countdown with the first exercise, "Start now") → **exercise** → **rest** → next … → **finish**
+- **Reps exercises**: big "×12" and a big **✓ Done** button - no more typing reps; adjust reps (and weight for equipment exercises) with − / + if needed
+- **Timed exercises**: 3-2-1 "Get ready", then a countdown ring with **⏸ Pause**; beeps for the last 3 seconds, "halfway" voice, finishes by itself
+- **Pause menu**: Resume, Restart this exercise, Quit workout ("Save and finish" / "Quit without saving" / "Keep going")
+- **Rest screen**: countdown, **+20s**, **Skip rest**, and a preview of what's next
+- **⏮ Previous** and **⏭ Skip** on every exercise; progress bar with one segment per exercise; ✕ pauses
+- Each set is its own step (e.g. Crunches set 1 of 3, rest, set 2 of 3 …)
+- Finish screen: exercises, sets, minutes, ≈ kcal and whether the workout is saved / waiting to upload
+- Workout plans are saved with their real name (e.g. "Full Body Beginner") instead of "Completed workout plan: 3"
+- Voice coach, beeps, vibration, screen kept on and offline saving all kept
+
+### Fixes
+
+- New home-screen icon: icon files have new names so phones pick up the new logo
+- Admin / Profile: a space between the username and the "Admin" badge (it read as one word)
+
+---
+
+## 1.8.0 - Progress & motivation
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
 
 ### New features
 

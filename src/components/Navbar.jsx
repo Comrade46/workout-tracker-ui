@@ -40,7 +40,12 @@ function Navbar() {
         location.pathname === "/register" ||
         location.pathname === "/forgot-password";
 
-    const shouldHideNavbar = !token || isAuthPage;
+    // The workout player is full screen.
+    const inWorkout =
+        location.pathname.startsWith("/workout-player/") ||
+        /^\/programs\/[^/]+\/[^/]+\/play$/.test(location.pathname);
+
+    const shouldHideNavbar = !token || isAuthPage || inWorkout;
 
     useEffect(() => {
         setMobileMenuOpen(false);
@@ -518,7 +523,7 @@ function Navbar() {
                         aria-label="Workout Tracker Dashboard"
                     >
                         <img
-                            src="/icons/icon-192.png"
+                            src="/icons/icon-192-v2.png"
                             alt="Workout Tracker"
                             className="wt-brand-icon"
                         />

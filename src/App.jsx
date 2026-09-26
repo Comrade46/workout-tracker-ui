@@ -31,7 +31,8 @@ import { startBackgroundSync } from "./offline/workoutOutbox";
 const Dashboard = lazy(() => import("./components/Dashboard"));
 const Workouts = lazy(() => import("./components/Workouts"));
 const WorkoutPlans = lazy(() => import("./components/WorkoutPlans"));
-const WorkoutPlayer = lazy(() => import("./components/WorkoutPlayer"));
+// Follow-along player (Ready -> exercise -> rest -> finish)
+const WorkoutPlayer = lazy(() => import("./player/FollowAlongPlayer"));
 const Analytics = lazy(() => import("./components/Analytics"));
 const ProgressTracking = lazy(() => import("./components/ProgressTracking"));
 const Exercises = lazy(() => import("./components/Exercises"));

@@ -379,7 +379,7 @@ function ProfilePage() {
                         <div style={{ minWidth: 0 }}>
                             <div className="wt-acc-name">
                                 {username || "Your account"}
-                                {account?.admin && <span className="wt-acc-badge">Admin</span>}
+                                {account?.admin && <>{" "}<span className="wt-acc-badge">Admin</span></>}
                             </div>
                             {account?.email && <div className="wt-acc-meta">{account.email}</div>}
                             {account?.createdAt && (

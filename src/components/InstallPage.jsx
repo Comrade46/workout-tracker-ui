@@ -283,7 +283,7 @@ function InstallPage() {
             <div className="wt-install-container">
 
                 <div className="wt-install-hero">
-                    <img src="/icons/icon-192.png" alt="" />
+                    <img src="/icons/icon-192-v2.png" alt="" />
 
                     <div>
                         <h1>Get Workout Tracker</h1>
