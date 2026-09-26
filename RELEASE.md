@@ -146,7 +146,7 @@ Render builds and deploys automatically after the push.
 
 ## 5. Verify production
 
-- [ ] https://workout-tracker-api-fwlz.onrender.com/api/health returns `UP`
+- [ ] https://workout-tracker-api-sg.onrender.com/api/health returns `UP` (Singapore backend)
 - [ ] https://workout-tracker-ui-g065.onrender.com opens and shows the new version in the Navbar
 - [ ] An already-open or installed copy shows 🔄; clicking it loads the new version
 - [ ] Mark the release as **Deployed** in this file

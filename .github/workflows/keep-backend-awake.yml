@@ -26,4 +26,4 @@ jobs:
           curl --fail --silent --show-error \
                --retry 3 --retry-delay 15 \
                --max-time 150 \
-               https://workout-tracker-api-fwlz.onrender.com/api/health
+               https://workout-tracker-api-sg.onrender.com/api/health
