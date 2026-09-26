@@ -44,15 +44,9 @@ function ThemeToggle() {
             }
             style={{
                 ...styles.button,
-                backgroundColor: isDark
-                    ? "#1e293b"
-                    : "#ffffff",
-                color: isDark
-                    ? "#f8fafc"
-                    : "#111827",
-                borderColor: isDark
-                    ? "#334155"
-                    : "#d1d5db"
+                backgroundColor: "var(--wt-surface-secondary)",
+                color: "var(--wt-text-primary)",
+                borderColor: "var(--wt-border)"
             }}
         >
             <span style={styles.icon}>

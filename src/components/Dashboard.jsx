@@ -739,7 +739,7 @@ const styles = {
         padding: "12px 18px",
         backgroundColor:
             "var(--wt-accent, #2563eb)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         fontWeight: "700",
         cursor: "pointer"
     },
@@ -843,7 +843,7 @@ const styles = {
     },
 
     errorTitle: {
-        color: "#dc2626"
+        color: "var(--wt-danger)"
     }
 };
 

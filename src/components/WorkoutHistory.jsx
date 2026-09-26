@@ -965,7 +965,7 @@ const styles = {
         padding: "11px 18px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "700"
     },
@@ -976,7 +976,7 @@ const styles = {
         padding: "12px 22px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "700"
     },
@@ -1250,7 +1250,7 @@ const styles = {
         padding: "13px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "700"
     }

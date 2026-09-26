@@ -16,6 +16,7 @@
     --wt-input-background: #ffffff;
     --wt-input-text: #111827;
     --wt-input-placeholder: #6b7280;
+    --wt-input-border: #cbd5e1;
 
     --wt-select-background: #ffffff;
     --wt-select-text: #111827;
@@ -29,6 +30,22 @@
     --wt-success: #16a34a;
     --wt-warning: #d97706;
     --wt-danger: #dc2626;
+    --wt-danger-soft: rgba(220, 38, 38, 0.10);
+    --wt-danger-border: #fecaca;
+
+    --wt-accent-soft: rgba(37, 99, 235, 0.1);
+    --wt-success-soft: rgba(22, 163, 74, 0.10);
+
+    /* Text on solid accent / status colours */
+    --wt-on-accent: #ffffff;
+    --wt-on-success: #ffffff;
+    --wt-on-warning: #ffffff;
+    --wt-on-danger: #ffffff;
+
+    --wt-button-background: #111827;
+    --wt-button-text: #ffffff;
+    --wt-secondary-button-background: #ffffff;
+    --wt-secondary-button-text: #111827;
 
     --wt-shadow:
         0 10px 30px rgba(15, 23, 42, 0.08);
@@ -56,42 +73,62 @@ html[data-theme="dark"] {
     color-scheme: dark;
 }
 
+/*
+ * "Storm" dark theme: deep navy-teal backgrounds with a mint accent
+ * (palette #D0D8D6 #88B9AE #537774 #03222E #05141E).
+ * Keep in sync with themeValues.dark in theme.js.
+ */
 html[data-theme="dark"],
 body[data-theme="dark"] {
-    --wt-page-background: #0b0f14;
-    --wt-surface: #121821;
-    --wt-surface-secondary: #171f2a;
-    --wt-surface-tertiary: #1d2733;
+    --wt-page-background: #05141E;
+    --wt-surface: #0B2531;
+    --wt-surface-secondary: #10303C;
+    --wt-surface-tertiary: #173B47;
 
-    --wt-text-primary: #f8fafc;
-    --wt-text-secondary: #cbd5e1;
-    --wt-text-muted: #94a3b8;
+    --wt-text-primary: #E6EDEB;
+    --wt-text-secondary: #BFD0CC;
+    --wt-text-muted: #8FAAA5;
 
-    --wt-border: #293544;
-    --wt-border-strong: #3a4858;
+    --wt-border: #214652;
+    --wt-border-strong: #537774;
 
-    --wt-input-background: #0f151d;
-    --wt-input-text: #f8fafc;
-    --wt-input-placeholder: #94a3b8;
+    --wt-input-background: #071B25;
+    --wt-input-text: #E6EDEB;
+    --wt-input-placeholder: #8FAAA5;
+    --wt-input-border: #537774;
 
-    --wt-select-background: #0f151d;
-    --wt-select-text: #f8fafc;
+    --wt-select-background: #071B25;
+    --wt-select-text: #E6EDEB;
 
-    --wt-option-background: #121821;
-    --wt-option-text: #f8fafc;
+    --wt-option-background: #0B2531;
+    --wt-option-text: #E6EDEB;
 
-    --wt-accent: #60a5fa;
-    --wt-accent-soft: rgba(96, 165, 250, 0.14);
+    --wt-button-background: #88B9AE;
+    --wt-button-text: #05141E;
+    --wt-secondary-button-background: #10303C;
+    --wt-secondary-button-text: #E6EDEB;
 
-    --wt-success: #22c55e;
-    --wt-warning: #f59e0b;
-    --wt-danger: #f87171;
+    --wt-accent: #88B9AE;
+    --wt-accent-soft: rgba(136, 185, 174, 0.16);
+    --wt-on-accent: #05141E;
+
+    --wt-success: #7ED9A8;
+    --wt-success-soft: rgba(126, 217, 168, 0.14);
+    --wt-on-success: #05141E;
+
+    --wt-warning: #F2C572;
+    --wt-on-warning: #05141E;
+
+    --wt-danger: #F4978E;
+    --wt-danger-soft: rgba(244, 151, 142, 0.14);
+    --wt-danger-border: rgba(244, 151, 142, 0.35);
+    --wt-on-danger: #05141E;
 
     --wt-shadow:
-        0 10px 30px rgba(0, 0, 0, 0.28);
+        0 10px 35px rgba(0, 0, 0, 0.45);
 
     --wt-shadow-small:
-        0 4px 12px rgba(0, 0, 0, 0.2);
+        0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* =========================================================

@@ -1804,7 +1804,7 @@ const styles = {
         padding: "6px 10px",
         borderRadius: "20px",
         backgroundColor:
-            "rgba(37, 99, 235, 0.12)",
+            "var(--wt-accent-soft)",
         color:
             "var(--wt-accent)",
         fontWeight: "700",

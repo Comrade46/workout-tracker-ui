@@ -1757,7 +1757,7 @@ const styles = {
         borderRadius: "12px",
         padding: "13px 20px",
         backgroundColor: "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "800"
     },
@@ -1794,7 +1794,7 @@ const styles = {
         padding: "5px 9px",
         borderRadius: "7px",
         backgroundColor:
-            "rgba(37, 99, 235, 0.12)",
+            "var(--wt-accent-soft)",
         color:
             "var(--wt-accent)"
     },
@@ -1838,7 +1838,7 @@ const styles = {
         padding: "11px 14px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "800"
     },
@@ -1861,7 +1861,7 @@ const styles = {
         borderRadius: "10px",
         padding: "11px 14px",
         backgroundColor:
-            "rgba(220, 38, 38, 0.12)",
+            "var(--wt-danger-soft)",
         color:
             "var(--wt-danger, #dc2626)",
         cursor: "pointer",
@@ -1878,7 +1878,7 @@ const styles = {
         padding: "14px 16px",
         borderRadius: "12px",
         backgroundColor:
-            "rgba(220, 38, 38, 0.10)",
+            "var(--wt-danger-soft)",
         color:
             "var(--wt-danger, #dc2626)",
         border:
@@ -1891,7 +1891,7 @@ const styles = {
         padding: "8px 12px",
         backgroundColor:
             "var(--wt-danger, #dc2626)",
-        color: "#ffffff",
+        color: "var(--wt-on-danger)",
         cursor: "pointer",
         fontWeight: "700"
     },
@@ -1942,7 +1942,7 @@ const styles = {
         padding: "12px 20px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "700"
     },
@@ -2085,7 +2085,7 @@ const styles = {
         padding: "10px 14px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "700"
     },
@@ -2129,7 +2129,7 @@ const styles = {
         borderRadius: "50%",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         fontSize: "12px",
         fontWeight: "800"
     },
@@ -2176,7 +2176,7 @@ const styles = {
         border: "none",
         borderRadius: "8px",
         backgroundColor:
-            "rgba(220, 38, 38, 0.12)",
+            "var(--wt-danger-soft)",
         color:
             "var(--wt-danger, #dc2626)",
         cursor: "pointer",
@@ -2188,7 +2188,7 @@ const styles = {
         padding: "12px",
         borderRadius: "10px",
         backgroundColor:
-            "rgba(220, 38, 38, 0.10)",
+            "var(--wt-danger-soft)",
         color:
             "var(--wt-danger, #dc2626)"
     },
@@ -2219,7 +2219,7 @@ const styles = {
         padding: "12px 22px",
         backgroundColor:
             "var(--wt-accent)",
-        color: "#ffffff",
+        color: "var(--wt-on-accent)",
         cursor: "pointer",
         fontWeight: "800"
     }

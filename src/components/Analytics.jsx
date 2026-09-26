@@ -931,7 +931,7 @@ const styles = {
     repsBadge: {
         display: "inline-block",
         backgroundColor:
-            "rgba(34, 197, 94, 0.12)",
+            "var(--wt-success-soft)",
         color:
             "var(--wt-success, #15803d)",
         borderRadius: "20px",
@@ -943,7 +943,7 @@ const styles = {
     timeBadge: {
         display: "inline-block",
         backgroundColor:
-            "rgba(37, 99, 235, 0.12)",
+            "var(--wt-accent-soft)",
         color:
             "var(--wt-accent)",
         borderRadius: "20px",

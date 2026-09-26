@@ -22,6 +22,7 @@ export const themeValues = {
         inputBackground: "#ffffff",
         inputText: "#111827",
         inputPlaceholder: "#6b7280",
+        inputBorder: "#cbd5e1",
 
         selectBackground: "#ffffff",
         selectText: "#111827",
@@ -36,57 +37,126 @@ export const themeValues = {
 
         accent: "#2563eb",
         accentSoft: "rgba(37, 99, 235, 0.10)",
+        onAccent: "#ffffff",
 
         success: "#15803d",
         successSoft: "rgba(22, 163, 74, 0.10)",
+        onSuccess: "#ffffff",
+
+        warning: "#d97706",
+        onWarning: "#ffffff",
 
         danger: "#dc2626",
         dangerSoft: "rgba(220, 38, 38, 0.10)",
+        dangerBorder: "#fecaca",
+        onDanger: "#ffffff",
 
         shadow:
-            "0 8px 30px rgba(15, 23, 42, 0.08)"
+            "0 8px 30px rgba(15, 23, 42, 0.08)",
+        shadowSmall:
+            "0 4px 12px rgba(15, 23, 42, 0.06)",
+
+        // Phone status bar colour
+        statusBar: "#2563eb"
     },
 
+    /*
+     * "Storm" dark theme - deep navy-teal backgrounds with a mint accent,
+     * from the storm-over-the-sea palette:
+     *   #D0D8D6  #88B9AE  #537774  #03222E  #05141E
+     * Every text colour meets WCAG AA (4.5:1) on the surfaces it is used on.
+     */
     dark: {
-        pageBackground: "#0b0f14",
-        surface: "#121821",
-        surfaceSecondary: "#171f2a",
-        surfaceTertiary: "#1d2733",
+        pageBackground: "#05141E",
+        surface: "#0B2531",
+        surfaceSecondary: "#10303C",
+        surfaceTertiary: "#173B47",
 
-        textPrimary: "#f8fafc",
-        textSecondary: "#cbd5e1",
-        textMuted: "#94a3b8",
+        textPrimary: "#E6EDEB",
+        textSecondary: "#BFD0CC",
+        textMuted: "#8FAAA5",
 
-        border: "#293544",
-        borderStrong: "#3a4858",
+        border: "#214652",
+        borderStrong: "#537774",
 
-        inputBackground: "#0f151d",
-        inputText: "#f8fafc",
-        inputPlaceholder: "#94a3b8",
+        inputBackground: "#071B25",
+        inputText: "#E6EDEB",
+        inputPlaceholder: "#8FAAA5",
+        inputBorder: "#537774",
 
-        selectBackground: "#0f151d",
-        selectText: "#f8fafc",
-        optionBackground: "#121821",
-        optionText: "#f8fafc",
+        selectBackground: "#071B25",
+        selectText: "#E6EDEB",
+        optionBackground: "#0B2531",
+        optionText: "#E6EDEB",
 
-        buttonBackground: "#f8fafc",
-        buttonText: "#0f172a",
+        buttonBackground: "#88B9AE",
+        buttonText: "#05141E",
 
-        secondaryButtonBackground: "#1a2330",
-        secondaryButtonText: "#f8fafc",
+        secondaryButtonBackground: "#10303C",
+        secondaryButtonText: "#E6EDEB",
 
-        accent: "#60a5fa",
-        accentSoft: "rgba(96, 165, 250, 0.14)",
+        accent: "#88B9AE",
+        accentSoft: "rgba(136, 185, 174, 0.16)",
+        onAccent: "#05141E",
 
-        success: "#4ade80",
-        successSoft: "rgba(74, 222, 128, 0.12)",
+        success: "#7ED9A8",
+        successSoft: "rgba(126, 217, 168, 0.14)",
+        onSuccess: "#05141E",
 
-        danger: "#f87171",
-        dangerSoft: "rgba(248, 113, 113, 0.12)",
+        warning: "#F2C572",
+        onWarning: "#05141E",
+
+        danger: "#F4978E",
+        dangerSoft: "rgba(244, 151, 142, 0.14)",
+        dangerBorder: "rgba(244, 151, 142, 0.35)",
+        onDanger: "#05141E",
 
         shadow:
-            "0 10px 35px rgba(0, 0, 0, 0.35)"
+            "0 10px 35px rgba(0, 0, 0, 0.45)",
+        shadowSmall:
+            "0 4px 12px rgba(0, 0, 0, 0.3)",
+
+        statusBar: "#05141E"
     }
+};
+
+// Theme value -> CSS variable used throughout the app
+const CSS_VARIABLES = {
+    pageBackground: "--wt-page-background",
+    surface: "--wt-surface",
+    surfaceSecondary: "--wt-surface-secondary",
+    surfaceTertiary: "--wt-surface-tertiary",
+    textPrimary: "--wt-text-primary",
+    textSecondary: "--wt-text-secondary",
+    textMuted: "--wt-text-muted",
+    border: "--wt-border",
+    borderStrong: "--wt-border-strong",
+    inputBackground: "--wt-input-background",
+    inputText: "--wt-input-text",
+    inputPlaceholder: "--wt-input-placeholder",
+    inputBorder: "--wt-input-border",
+    selectBackground: "--wt-select-background",
+    selectText: "--wt-select-text",
+    optionBackground: "--wt-option-background",
+    optionText: "--wt-option-text",
+    buttonBackground: "--wt-button-background",
+    buttonText: "--wt-button-text",
+    secondaryButtonBackground: "--wt-secondary-button-background",
+    secondaryButtonText: "--wt-secondary-button-text",
+    accent: "--wt-accent",
+    accentSoft: "--wt-accent-soft",
+    onAccent: "--wt-on-accent",
+    success: "--wt-success",
+    successSoft: "--wt-success-soft",
+    onSuccess: "--wt-on-success",
+    warning: "--wt-warning",
+    onWarning: "--wt-on-warning",
+    danger: "--wt-danger",
+    dangerSoft: "--wt-danger-soft",
+    dangerBorder: "--wt-danger-border",
+    onDanger: "--wt-on-danger",
+    shadow: "--wt-shadow",
+    shadowSmall: "--wt-shadow-small"
 };
 
 export function getStoredTheme() {
@@ -135,140 +205,17 @@ export function applyTheme(theme) {
     const values =
         themeValues[selectedTheme];
 
-    document.documentElement.style.setProperty(
-        "--wt-page-background",
-        values.pageBackground
-    );
+    Object.entries(CSS_VARIABLES).forEach(([key, variable]) => {
+        document.documentElement.style.setProperty(
+            variable,
+            values[key]
+        );
+    });
 
-    document.documentElement.style.setProperty(
-        "--wt-surface",
-        values.surface
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-surface-secondary",
-        values.surfaceSecondary
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-surface-tertiary",
-        values.surfaceTertiary
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-text-primary",
-        values.textPrimary
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-text-secondary",
-        values.textSecondary
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-text-muted",
-        values.textMuted
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-border",
-        values.border
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-border-strong",
-        values.borderStrong
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-input-background",
-        values.inputBackground
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-input-text",
-        values.inputText
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-input-placeholder",
-        values.inputPlaceholder
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-select-background",
-        values.selectBackground
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-select-text",
-        values.selectText
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-option-background",
-        values.optionBackground
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-option-text",
-        values.optionText
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-button-background",
-        values.buttonBackground
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-button-text",
-        values.buttonText
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-secondary-button-background",
-        values.secondaryButtonBackground
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-secondary-button-text",
-        values.secondaryButtonText
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-accent",
-        values.accent
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-accent-soft",
-        values.accentSoft
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-success",
-        values.success
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-success-soft",
-        values.successSoft
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-danger",
-        values.danger
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-danger-soft",
-        values.dangerSoft
-    );
-
-    document.documentElement.style.setProperty(
-        "--wt-shadow",
-        values.shadow
-    );
+    // Match the phone's status bar / browser toolbar to the theme.
+    document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", values.statusBar);
 }
 
 export {

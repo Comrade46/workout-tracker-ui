@@ -996,7 +996,9 @@ function WorkoutPlayer() {
         setSaveError("");
 
         try {
-            const elapsedMinutes =
+            // Between 1 minute and 24 hours (the server rejects more).
+            const elapsedMinutes = Math.min(
+                24 * 60,
                 workoutStartTimeRef.current
                     ? Math.max(
                           1,
@@ -1008,7 +1010,8 @@ function WorkoutPlayer() {
                                   60000
                           )
                       )
-                    : 1;
+                    : 1
+            );
 
             const sets =
                 Object.values(
@@ -2500,7 +2503,7 @@ const styles = {
         height:
             "100%",
         background:
-            "#2563eb",
+            "var(--wt-accent)",
         borderRadius:
             "10px",
         transition:
@@ -2572,9 +2575,9 @@ const styles = {
         fontWeight:
             "700",
         background:
-            "#2563eb",
+            "var(--wt-accent)",
         color:
-            "#ffffff",
+            "var(--wt-on-accent)",
         whiteSpace:
             "nowrap"
     },
@@ -2628,7 +2631,7 @@ const styles = {
         borderRadius:
             "50%",
         border:
-            "10px solid #2563eb",
+            "10px solid var(--wt-accent)",
         display:
             "flex",
         alignItems:
@@ -2722,9 +2725,9 @@ const styles = {
         borderRadius:
             "9px",
         background:
-            "#2563eb",
+            "var(--wt-accent)",
         color:
-            "#ffffff",
+            "var(--wt-on-accent)",
         fontWeight:
             "700",
         cursor:
@@ -2793,9 +2796,9 @@ const styles = {
         borderRadius:
             "10px",
         background:
-            "#2563eb",
+            "var(--wt-accent)",
         color:
-            "#ffffff",
+            "var(--wt-on-accent)",
         fontWeight:
             "700",
         cursor:
@@ -2827,9 +2830,9 @@ const styles = {
         borderRadius:
             "10px",
         background:
-            "#f59e0b",
+            "var(--wt-warning)",
         color:
-            "#ffffff",
+            "var(--wt-on-warning)",
         fontWeight:
             "700",
         cursor:
@@ -2921,9 +2924,9 @@ const styles = {
         margin:
             "0 auto 20px",
         background:
-            "#16a34a",
+            "var(--wt-success)",
         color:
-            "#ffffff",
+            "var(--wt-on-success)",
         fontSize:
             "40px",
         fontWeight:
@@ -3018,9 +3021,9 @@ const styles = {
         justifyContent:
             "center",
         background:
-            "#dc2626",
+            "var(--wt-danger)",
         color:
-            "#ffffff",
+            "var(--wt-on-danger)",
         fontSize:
             "30px",
         fontWeight:

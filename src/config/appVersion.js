@@ -15,7 +15,7 @@
 //
 // `npm run build` fails if they do not match. See RELEASE.md.
 
-export const APP_VERSION = "1.3.0";
+export const APP_VERSION = "1.4.0";
 
 export const APP_NAME = "Workout Tracker";
 

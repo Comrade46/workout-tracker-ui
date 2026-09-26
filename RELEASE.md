@@ -10,6 +10,30 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.4.0 - Storm dark theme
+
+**Date:** 2026-09-26
+**Deployment status:** Deployed 2026-09-26
+
+### New features
+
+- **New dark theme "Storm"**: deep navy-teal backgrounds with a mint accent, from the palette `#D0D8D6 #88B9AE #537774 #03222E #05141E`. Every text colour meets WCAG AA contrast (checked on all pages: 0 failures)
+- Buttons, badges, timer ring and progress bars follow the theme (previously fixed blue)
+- Phone status bar colour follows the theme
+- Register page restyled to match Login and the theme
+
+### Bug fixes
+
+- White text on light-accent buttons in dark mode was hard to read; text on coloured buttons now adapts to the theme
+- Login / Register input boxes had no visible border (an undefined colour variable)
+- Analytics showed an impossible training time (one workout was stored with 1,073,741,824 minutes). The record was corrected, the server now rejects durations over 24 hours, and analytics ignores impossible values
+
+### Notes
+
+- The light theme is unchanged in this release (next: light theme refresh)
+
+---
+
 ## 1.3.0 - Guided workouts
 
 **Date:** 2026-09-26

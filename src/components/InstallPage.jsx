@@ -150,8 +150,8 @@ function InstallPage() {
                         border: none;
                         border-radius: 12px;
 
-                        background: #2563eb;
-                        color: #ffffff;
+                        background: var(--wt-accent);
+                        color: var(--wt-on-accent);
 
                         font-size: 16px;
                         font-weight: 700;
