@@ -28,6 +28,12 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 - Workout plans are saved with their real name (e.g. "Full Body Beginner") instead of "Completed workout plan: 3"
 - Voice coach, beeps, vibration, screen kept on and offline saving all kept
 
+### Home-Workout-style navigation
+
+- **Bottom tab bar on phones**: 🏠 Home · 🏋️ Workouts · 📅 History · 📊 Stats · 👤 Me (dot on "Me" when a workout is waiting to upload); hidden during a workout
+- **Me (Profile) as a menu**: rows grouped in My body / Workouts / Account / App; tap a row to open it (Body & goals, Workouts waiting to upload, Change password, Send feedback), links for Weight & BMI, History, Admin, Install, plus a voice-coach switch, theme, version and Log out
+- **App-icon shortcuts**: long-press the Workout Tracker icon on the phone for "Start workout", "Log weight" and "Workout history"
+
 ### Fixes
 
 - New home-screen icon: icon files have new names so phones pick up the new logo

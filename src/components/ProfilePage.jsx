@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import BodyGoalsForm from "../progress/BodyGoalsForm";
+import ThemeToggle from "../theme/ThemeToggle";
 import api from "../api/axiosConfig";
-import { APP_VERSION, APP_VERSION_LABEL } from "../config/appVersion";
+import { APP_VERSION } from "../config/appVersion";
 import {
     clearSession,
     getStoredUser,
     mustChangePassword,
     saveSession
 } from "../auth/session";
+import { isSoundOn, setSoundOn, unlockAudio } from "../coach/workoutCoach";
 import {
     removePendingWorkout,
     syncPendingWorkouts,
@@ -36,23 +38,101 @@ function setCount(payload) {
 }
 
 // ---------------------------------------------------------------
-// Workouts saved on this phone that are not on the server yet
+// Menu building blocks
 // ---------------------------------------------------------------
+
+function MenuSection({ title, children }) {
+    return (
+        <section className="wt-me-section" aria-label={title}>
+            <h2 className="wt-me-section-title">{title}</h2>
+            <div className="wt-me-group">{children}</div>
+        </section>
+    );
+}
+
+// A row that opens a panel under it when tapped.
+function MenuRow({ id, icon, title, subtitle, badge, open, onToggle, children }) {
+    const panelId = `wt-me-panel-${id}`;
+
+    return (
+        <div className={`wt-me-item${open ? " open" : ""}`} id={id}>
+            <button
+                type="button"
+                className="wt-me-row"
+                onClick={onToggle}
+                aria-expanded={open}
+                aria-controls={panelId}
+            >
+                <span className="wt-me-icon" aria-hidden="true">{icon}</span>
+                <span className="wt-me-text">
+                    <span className="wt-me-title">{title}</span>
+                    {subtitle && <span className="wt-me-subtitle">{subtitle}</span>}
+                </span>
+                {badge ? <span className="wt-acc-count">{badge}</span> : null}
+                <span className="wt-me-chevron" aria-hidden="true">›</span>
+            </button>
+
+            {open && (
+                <div className="wt-me-panel" id={panelId}>
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// A row that goes to another page.
+function MenuLink({ icon, title, subtitle, to }) {
+    return (
+        <div className="wt-me-item">
+            <Link to={to} className="wt-me-row">
+                <span className="wt-me-icon" aria-hidden="true">{icon}</span>
+                <span className="wt-me-text">
+                    <span className="wt-me-title">{title}</span>
+                    {subtitle && <span className="wt-me-subtitle">{subtitle}</span>}
+                </span>
+                <span className="wt-me-chevron" aria-hidden="true">›</span>
+            </Link>
+        </div>
+    );
+}
+
+// A row with its own control on the right (switch, theme button, text).
+function MenuSetting({ icon, title, subtitle, children }) {
+    return (
+        <div className="wt-me-item">
+            <div className="wt-me-row static">
+                <span className="wt-me-icon" aria-hidden="true">{icon}</span>
+                <span className="wt-me-text">
+                    <span className="wt-me-title">{title}</span>
+                    {subtitle && <span className="wt-me-subtitle">{subtitle}</span>}
+                </span>
+                {children}
+            </div>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------
+// Panels
+// ---------------------------------------------------------------
+
+// Workouts saved on this phone that are not on the server yet
 function UploadQueue() {
     const { pending, syncing } = usePendingWorkouts();
     const [confirmDelete, setConfirmDelete] = useState(null);
 
     if (pending.length === 0) {
-        return null;
+        return <div className="wt-acc-empty">All workouts are uploaded ✓</div>;
     }
 
     return (
-        <section className="wt-acc-card" id="uploads" aria-labelledby="wt-uploads-title">
+        <>
             <div className="wt-acc-section-head">
-                <h2 id="wt-uploads-title">
-                    ⏳ Workouts waiting to upload
-                    <span className="wt-acc-count">{pending.length}</span>
-                </h2>
+                <p className="wt-acc-card-hint" style={{ margin: 0 }}>
+                    Saved on this phone. They upload automatically when the internet and
+                    server are available.
+                </p>
 
                 <button
                     type="button"
@@ -64,19 +144,13 @@ function UploadQueue() {
                 </button>
             </div>
 
-            <p className="wt-acc-card-hint">
-                These are saved on this phone and upload automatically when the
-                internet and server are available.
-            </p>
-
             <div className="wt-acc-list">
                 {pending.map((entry) => (
                     <div key={entry.clientId} className="wt-acc-item">
                         <div className="wt-acc-item-main">
                             <div className="wt-acc-item-title">{workoutTitle(entry.payload)}</div>
                             <div className="wt-acc-meta">
-                                {formatDate(entry.payload?.workoutDate)} ·{" "}
-                                {setCount(entry.payload)} ·{" "}
+                                {formatDate(entry.payload?.workoutDate)} · {setCount(entry.payload)} ·{" "}
                                 {entry.status === "failed" ? "⚠️ could not upload" : "waiting"}
                             </div>
                             {entry.error && entry.status === "failed" && (
@@ -115,13 +189,10 @@ function UploadQueue() {
                     </div>
                 ))}
             </div>
-        </section>
+        </>
     );
 }
 
-// ---------------------------------------------------------------
-// Change password
-// ---------------------------------------------------------------
 function ChangePassword({ forced, onChanged }) {
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -164,8 +235,7 @@ function ChangePassword({ forced, onChanged }) {
     };
 
     return (
-        <section className="wt-acc-card" aria-labelledby="wt-password-title">
-            <h2 id="wt-password-title">🔒 {forced ? "Choose your new password" : "Change password"}</h2>
+        <>
             <p className="wt-acc-card-hint">
                 {forced
                     ? "Enter the temporary password you received, then your own new password."
@@ -230,13 +300,10 @@ function ChangePassword({ forced, onChanged }) {
                     </button>
                 </div>
             </form>
-        </section>
+        </>
     );
 }
 
-// ---------------------------------------------------------------
-// Send feedback
-// ---------------------------------------------------------------
 function Feedback() {
     const [message, setMessage] = useState("");
     const [sending, setSending] = useState(false);
@@ -267,10 +334,9 @@ function Feedback() {
     };
 
     return (
-        <section className="wt-acc-card" id="feedback" aria-labelledby="wt-feedback-title">
-            <h2 id="wt-feedback-title">💬 Send feedback</h2>
+        <>
             <p className="wt-acc-card-hint">
-                Found a problem or have an idea? Tell us - it goes straight to the app admin.
+                Found a problem or have an idea? It goes straight to the app admin.
             </p>
 
             {error && <div className="wt-acc-message error" role="alert" style={{ marginBottom: 14 }}>{error}</div>}
@@ -302,18 +368,23 @@ function Feedback() {
                     </button>
                 </div>
             </form>
-        </section>
+        </>
     );
 }
 
 // ---------------------------------------------------------------
-// Page
+// Page ("Me")
 // ---------------------------------------------------------------
 function ProfilePage() {
     const navigate = useNavigate();
     const location = useLocation();
     const [account, setAccount] = useState(getStoredUser());
     const [forced, setForced] = useState(mustChangePassword());
+    const [soundOn, setSoundOnState] = useState(isSoundOn());
+    const { pending } = usePendingWorkouts();
+
+    // Which row is open. Links like /profile#goals open that row.
+    const [openRow, setOpenRow] = useState(() => location.hash.slice(1) || null);
 
     useEffect(() => {
         let cancelled = false;
@@ -331,16 +402,19 @@ function ProfilePage() {
         };
     }, []);
 
-    // Links like /profile#goals jump to that section.
     useEffect(() => {
-        if (!location.hash) return undefined;
+        const target = location.hash.slice(1);
+        if (!target) return undefined;
 
+        setOpenRow(target);
         const timer = window.setTimeout(() => {
-            document.getElementById(location.hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+            document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 300);
 
         return () => window.clearTimeout(timer);
     }, [location.hash]);
+
+    const toggle = (row) => setOpenRow((current) => (current === row ? null : row));
 
     const handleLogout = () => {
         clearSession();
@@ -354,23 +428,20 @@ function ProfilePage() {
         }
     };
 
+    const toggleSound = () => {
+        const next = !soundOn;
+        setSoundOn(next);
+        setSoundOnState(next);
+        if (next) unlockAudio();
+    };
+
     const username = account?.username || "";
 
     return (
         <div className="wt-acc-page">
             <div className="wt-acc-container">
-                <div>
-                    <h1 className="wt-acc-title">👤 Profile</h1>
-                    <p className="wt-acc-subtitle">Your account, goals, password and feedback.</p>
-                </div>
 
-                {forced && (
-                    <div className="wt-acc-message warning" role="alert">
-                        🔑 You logged in with a temporary password. Please choose your own
-                        password to continue.
-                    </div>
-                )}
-
+                {/* Who is logged in */}
                 <section className="wt-acc-card" aria-label="Account">
                     <div className="wt-acc-identity">
                         <div className="wt-acc-avatar" aria-hidden="true">
@@ -389,33 +460,110 @@ function ProfilePage() {
                     </div>
                 </section>
 
-                {!forced && <BodyGoalsForm />}
-
-                <ChangePassword forced={forced} onChanged={handlePasswordChanged} />
-
-                {!forced && (
+                {forced ? (
                     <>
-                        <UploadQueue />
-                        <Feedback />
+                        <div className="wt-acc-message warning" role="alert">
+                            🔑 You logged in with a temporary password. Please choose your own
+                            password to continue.
+                        </div>
 
-                        <section className="wt-acc-card" aria-label="App">
-                            <div className="wt-acc-section-head" style={{ marginBottom: 0 }}>
-                                <div>
-                                    <h2>📱 App</h2>
-                                    <div className="wt-acc-meta">
-                                        Workout Tracker · {APP_VERSION_LABEL}
-                                    </div>
-                                </div>
+                        <section className="wt-acc-card" aria-label="Choose your new password">
+                            <h2>🔒 Choose your new password</h2>
+                            <ChangePassword forced onChanged={handlePasswordChanged} />
+                        </section>
+                    </>
+                ) : (
+                    <>
+                        <MenuSection title="My body">
+                            <MenuRow
+                                id="goals"
+                                icon="🎯"
+                                title="Body & goals"
+                                subtitle="Main goal, weekly goal, height, target weight"
+                                open={openRow === "goals"}
+                                onToggle={() => toggle("goals")}
+                            >
+                                <BodyGoalsForm bare />
+                            </MenuRow>
 
+                            <MenuLink icon="⚖️" title="Weight & BMI" subtitle="Log weight, see your chart" to="/body" />
+                        </MenuSection>
+
+                        <MenuSection title="Workouts">
+                            <MenuSetting icon={soundOn ? "🔊" : "🔇"} title="Voice coach & sounds" subtitle="Announcements and countdown beeps">
                                 <button
                                     type="button"
-                                    className="wt-acc-button secondary"
-                                    onClick={handleLogout}
+                                    role="switch"
+                                    aria-checked={soundOn}
+                                    aria-label="Voice coach and sounds"
+                                    className={`wt-me-switch${soundOn ? " on" : ""}`}
+                                    onClick={toggleSound}
                                 >
-                                    Log out
+                                    <span />
+                                </button>
+                            </MenuSetting>
+
+                            <MenuRow
+                                id="uploads"
+                                icon="⏳"
+                                title="Workouts waiting to upload"
+                                subtitle={pending.length ? "Saved on this phone" : "Everything is uploaded"}
+                                badge={pending.length || null}
+                                open={openRow === "uploads"}
+                                onToggle={() => toggle("uploads")}
+                            >
+                                <UploadQueue />
+                            </MenuRow>
+
+                            <MenuLink icon="📅" title="Workout history" subtitle="Calendar and all past workouts" to="/workout-history" />
+                        </MenuSection>
+
+                        <MenuSection title="Account">
+                            <MenuRow
+                                id="password"
+                                icon="🔒"
+                                title="Change password"
+                                open={openRow === "password"}
+                                onToggle={() => toggle("password")}
+                            >
+                                <ChangePassword onChanged={handlePasswordChanged} />
+                            </MenuRow>
+
+                            {account?.admin && (
+                                <MenuLink icon="🛡️" title="Admin" subtitle="Password requests, users, feedback" to="/admin" />
+                            )}
+                        </MenuSection>
+
+                        <MenuSection title="App">
+                            <MenuSetting icon="🎨" title="Theme" subtitle="Light or dark">
+                                <ThemeToggle />
+                            </MenuSetting>
+
+                            <MenuLink icon="📲" title="Install or share the app" subtitle="Get it on another phone or computer" to="/install" />
+
+                            <MenuRow
+                                id="feedback"
+                                icon="💬"
+                                title="Send feedback"
+                                open={openRow === "feedback"}
+                                onToggle={() => toggle("feedback")}
+                            >
+                                <Feedback />
+                            </MenuRow>
+
+                            <MenuSetting icon="ℹ️" title="Version">
+                                <span className="wt-me-value">{APP_VERSION}</span>
+                            </MenuSetting>
+
+                            <div className="wt-me-item">
+                                <button type="button" className="wt-me-row danger" onClick={handleLogout}>
+                                    <span className="wt-me-icon" aria-hidden="true">🚪</span>
+                                    <span className="wt-me-text">
+                                        <span className="wt-me-title">Log out</span>
+                                    </span>
                                 </button>
                             </div>
-                        </section>
+                        </MenuSection>
                     </>
                 )}
             </div>

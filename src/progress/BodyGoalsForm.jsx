@@ -9,8 +9,9 @@ function feetAndInches(cm) {
     return `${Math.floor(totalInches / 12)} ft ${totalInches % 12} in`;
 }
 
-// Profile card: height, main goal, workout days per week, target weight.
-function BodyGoalsForm() {
+// Height, main goal, workout days per week, target weight.
+// `bare`: without its own card and heading (inside a Profile menu row).
+function BodyGoalsForm({ bare = false }) {
     const { profile, loading, saveProfile } = useBody();
 
     const [height, setHeight] = useState("");
@@ -63,9 +64,15 @@ function BodyGoalsForm() {
         }
     };
 
+    const Wrapper = bare ? "div" : "section";
+
     return (
-        <section className="wt-acc-card" id="goals" aria-labelledby="wt-goals-title">
-            <h2 id="wt-goals-title">🎯 Body &amp; goals</h2>
+        <Wrapper
+            className={bare ? undefined : "wt-acc-card"}
+            id={bare ? undefined : "goals"}
+            aria-labelledby={bare ? undefined : "wt-goals-title"}
+        >
+            {!bare && <h2 id="wt-goals-title">🎯 Body &amp; goals</h2>}
             <p className="wt-acc-card-hint">
                 Used for your weekly goal, streaks, BMI and calorie estimates.
             </p>
@@ -163,7 +170,7 @@ function BodyGoalsForm() {
                     </div>
                 </form>
             )}
-        </section>
+        </Wrapper>
     );
 }
 

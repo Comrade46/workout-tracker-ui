@@ -96,6 +96,28 @@ export default defineConfig({
 
                 categories: ["health", "fitness", "lifestyle"],
 
+                // Long-press the app icon on the phone for these shortcuts.
+                shortcuts: [
+                    {
+                        name: "Start workout",
+                        short_name: "Workout",
+                        url: "/programs",
+                        icons: [{ src: "/icons/icon-192-v2.png", sizes: "192x192", type: "image/png" }]
+                    },
+                    {
+                        name: "Log weight",
+                        short_name: "Weight",
+                        url: "/body",
+                        icons: [{ src: "/icons/icon-192-v2.png", sizes: "192x192", type: "image/png" }]
+                    },
+                    {
+                        name: "Workout history",
+                        short_name: "History",
+                        url: "/workout-history",
+                        icons: [{ src: "/icons/icon-192-v2.png", sizes: "192x192", type: "image/png" }]
+                    }
+                ],
+
                 icons: [
                     {
                         src: "/icons/icon-192-v2.png",

@@ -12,6 +12,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Navbar from "./components/Navbar";
 import ServerWakeIndicator from "./components/ServerWakeIndicator";
+import BottomNav from "./components/BottomNav";
 import api from "./api/axiosConfig";
 import {
     clearSession,
@@ -438,6 +439,9 @@ function AppContent() {
             </Routes>
 
             </Suspense>
+
+            {/* Phones: Home · Workouts · History · Stats · Me */}
+            <BottomNav />
 
         </>
 
