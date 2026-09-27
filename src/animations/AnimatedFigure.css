@@ -1,0 +1,23 @@
+.wt-figure-svg {
+    display: block;
+}
+
+.wt-figure-floor {
+    stroke: var(--wt-border);
+    stroke-width: 2;
+}
+
+.wt-figure-strokes line {
+    stroke: var(--wt-accent);
+    stroke-width: 10;
+    stroke-linecap: round;
+    fill: none;
+}
+
+.wt-figure-joint {
+    fill: var(--wt-accent);
+}
+
+.wt-figure-head {
+    fill: var(--wt-accent);
+}

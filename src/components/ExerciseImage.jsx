@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getExerciseMedia } from "../data/exerciseMedia";
+import { getExerciseAnimation } from "../animations/exerciseAnimations";
+import AnimatedFigure from "../animations/AnimatedFigure";
 
 const FRAME_MS = 1200;
 
@@ -29,8 +31,8 @@ function ExerciseImage({
     const [frame, setFrame] = useState(0);
     const [failed, setFailed] = useState(false);
 
-    const canAnimate =
-        animate && images.length > 1 && !prefersReducedMotion();
+    const reduceMotion = prefersReducedMotion();
+    const canAnimate = animate && images.length > 1 && !reduceMotion;
 
     useEffect(() => {
         setFrame(0);
@@ -50,7 +52,33 @@ function ExerciseImage({
         return () => clearInterval(timer);
     }, [canAnimate, images.length]);
 
-    if (!images.length || failed) {
+    if (!images.length) {
+        const animation = getExerciseAnimation(name);
+
+        if (!animation) {
+            return fallback;
+        }
+
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height,
+                    borderRadius: rounded,
+                    overflow: "hidden",
+                    background: "var(--wt-surface-tertiary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    ...style
+                }}
+            >
+                <AnimatedFigure def={animation} animate={animate && !reduceMotion} height={height} />
+            </div>
+        );
+    }
+
+    if (failed) {
         return fallback;
     }
 
@@ -82,7 +110,8 @@ function ExerciseImage({
                         height: "100%",
                         objectFit: "cover",
                         opacity: index === frame ? 1 : 0,
-                        transition: "opacity 0.35s ease"
+                        transform: index === frame ? "scale(1)" : "scale(1.03)",
+                        transition: "opacity 0.5s ease, transform 0.5s ease"
                     }}
                 />
             ))}
