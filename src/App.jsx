@@ -45,6 +45,7 @@ const ProfilePage = lazy(() => import("./components/ProfilePage"));
 const AdminPage = lazy(() => import("./components/AdminPage"));
 const ForgotPassword = lazy(() => import("./components/ForgotPassword"));
 const BodyPage = lazy(() => import("./progress/BodyPage"));
+const Welcome = lazy(() => import("./onboarding/Welcome"));
 
 
 function PageLoading() {
@@ -224,6 +225,16 @@ function AppContent() {
                 <Route
                     path="/register"
                     element={<Register />}
+                />
+
+                {/* First-time setup right after signing up */}
+                <Route
+                    path="/welcome"
+                    element={
+                        <ProtectedRoute>
+                            <Welcome />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route

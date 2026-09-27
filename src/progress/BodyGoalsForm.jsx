@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import useBody from "./useBody";
 import { DEFAULT_WEEKLY_GOAL, FITNESS_GOALS, toNumber } from "./motivation";
+import { LEVELS } from "../data/programs";
 import "./Progress.css";
 
 // "5 ft 9 in" for a height in cm.
@@ -16,6 +17,7 @@ function BodyGoalsForm({ bare = false }) {
 
     const [height, setHeight] = useState("");
     const [goal, setGoal] = useState(null);
+    const [level, setLevel] = useState(null);
     const [weeklyGoal, setWeeklyGoal] = useState(DEFAULT_WEEKLY_GOAL);
     const [target, setTarget] = useState("");
     const [saving, setSaving] = useState(false);
@@ -26,6 +28,7 @@ function BodyGoalsForm({ bare = false }) {
 
         setHeight(profile.heightCm ? String(profile.heightCm) : "");
         setGoal(profile.fitnessGoal || null);
+        setLevel(profile.experienceLevel || null);
         setWeeklyGoal(profile.weeklyGoal || DEFAULT_WEEKLY_GOAL);
         setTarget(profile.targetWeightKg ? String(toNumber(profile.targetWeightKg)) : "");
     }, [loading, profile]);
@@ -54,7 +57,8 @@ function BodyGoalsForm({ bare = false }) {
                 heightCm,
                 weeklyGoal,
                 fitnessGoal: goal,
-                targetWeightKg: targetKg
+                targetWeightKg: targetKg,
+                experienceLevel: level
             });
             setMessage({ text: "Saved ✓", error: false });
         } catch (requestError) {
@@ -96,6 +100,24 @@ function BodyGoalsForm({ bare = false }) {
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    <div className="wt-acc-field">
+                        <span style={{ fontWeight: 700, fontSize: 14 }} id="wt-level-label">Level</span>
+                        <div className="wt-pr-chips" role="group" aria-labelledby="wt-level-label">
+                            {LEVELS.map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    className={`wt-pr-chip${level === option ? " selected" : ""}`}
+                                    aria-pressed={level === option}
+                                    onClick={() => setLevel(level === option ? null : option)}
+                                >
+                                    {option}
+                                </button>
+                            ))}
+                        </div>
+                        <span className="wt-pr-muted">Which suggested programs fit you best.</span>
                     </div>
 
                     <div className="wt-acc-field">

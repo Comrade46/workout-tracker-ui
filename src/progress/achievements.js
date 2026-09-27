@@ -184,13 +184,30 @@ function nextSplitDay(program, lastDayKey) {
     return days[(index + 1) % days.length] || days[0];
 }
 
+// Which program to suggest a brand-new user, by main goal and level.
+const BUILD_MUSCLE_PROGRAM = {
+    Beginner: "fullbody3-beginner",
+    Intermediate: "split4-intermediate",
+    Advanced: "vtaper5-advanced"
+};
+
+export function suggestedProgramId(fitnessGoal, experienceLevel) {
+    const level = ["Beginner", "Intermediate", "Advanced"].includes(experienceLevel)
+        ? experienceLevel
+        : "Beginner";
+
+    return fitnessGoal === "BUILD_MUSCLE"
+        ? BUILD_MUSCLE_PROGRAM[level]
+        : `challenge30-${level.toLowerCase()}`;
+}
+
 /*
  * The program workout to show on Home:
  * { program, day, isNew } or { program, finished: true } for a finished
  * challenge. With no program history, a starting suggestion that fits the
- * user's main goal.
+ * user's main goal and level.
  */
-export function nextProgramWorkout(workouts, fitnessGoal) {
+export function nextProgramWorkout(workouts, fitnessGoal, experienceLevel) {
     const done = completedProgramDays(workouts);
 
     for (const workout of newestFirst(workouts)) {
@@ -208,7 +225,9 @@ export function nextProgramWorkout(workouts, fitnessGoal) {
         return { program, day: nextSplitDay(program, match[2]), isNew: false };
     }
 
-    const suggestion = getProgram(fitnessGoal === "BUILD_MUSCLE" ? "fullbody3-beginner" : "challenge30-beginner");
+    const suggestion =
+        getProgram(suggestedProgramId(fitnessGoal, experienceLevel)) ||
+        getProgram("challenge30-beginner");
     return suggestion ? { program: suggestion, day: suggestion.days.find((day) => !day.rest), isNew: true } : null;
 }
 

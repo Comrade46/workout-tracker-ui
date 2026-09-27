@@ -281,6 +281,7 @@ function Dashboard() {
                 <ContinueCard
                     workouts={workouts}
                     fitnessGoal={body.profile.fitnessGoal}
+                    experienceLevel={body.profile.experienceLevel}
                 />
 
                 {/* =========================

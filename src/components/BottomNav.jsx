@@ -15,7 +15,7 @@ const TABS = [
     { label: "Me", path: "/profile", icon: "👤", match: ["/profile", "/admin"] }
 ];
 
-const HIDDEN_ON = ["/login", "/register", "/forgot-password", "/install"];
+const HIDDEN_ON = ["/login", "/register", "/forgot-password", "/install", "/welcome"];
 
 function isWorkoutPlayer(pathname) {
     return pathname.startsWith("/workout-player/") || /^\/programs\/[^/]+\/[^/]+\/play$/.test(pathname);

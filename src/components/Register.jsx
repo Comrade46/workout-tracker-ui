@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axiosConfig';
+import { saveSession } from '../auth/session';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -25,10 +26,23 @@ const Register = () => {
       setSuccess(true);
       setError('');
 
-      // Send them to login page after 2 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      // Log them in right away so they land straight on the quick
+      // setup questions instead of typing their password twice.
+      try {
+        const loginResponse = await api.post('/auth/login', {
+          usernameOrEmail: username,
+          password
+        });
+
+        saveSession(loginResponse.data);
+        navigate('/welcome');
+      } catch {
+        // Fresh account exists but auto-login failed (e.g. server just
+        // woke up) - fall back to the normal login page.
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      }
 
     } catch (err) {
       // Backend sends 409 for duplicates and 400 with field messages for validation
@@ -61,7 +75,7 @@ const Register = () => {
 
         {success && (
           <div style={styles.success} role="status">
-            Registration successful! Redirecting to login...
+            Account created! Taking you in...
           </div>
         )}
 

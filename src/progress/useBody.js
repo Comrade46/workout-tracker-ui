@@ -2,7 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import api from "../api/axiosConfig";
 import { latestWeight, rememberWeight } from "./motivation";
 
-const EMPTY_PROFILE = { heightCm: null, weeklyGoal: null, fitnessGoal: null, targetWeightKg: null };
+const EMPTY_PROFILE = {
+    heightCm: null,
+    weeklyGoal: null,
+    fitnessGoal: null,
+    targetWeightKg: null,
+    experienceLevel: null
+};
 
 /*
  * Body stats, goals and the weight log of the logged-in user.

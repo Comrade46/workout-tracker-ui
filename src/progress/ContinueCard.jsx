@@ -17,8 +17,8 @@ function estimateMinutes(exercises) {
  * start (like "Continue" in the Home Workout app). New users get a
  * starting suggestion that fits their main goal.
  */
-function ContinueCard({ workouts, fitnessGoal }) {
-    const next = nextProgramWorkout(workouts, fitnessGoal);
+function ContinueCard({ workouts, fitnessGoal, experienceLevel }) {
+    const next = nextProgramWorkout(workouts, fitnessGoal, experienceLevel);
     if (!next) return null;
 
     const { program } = next;
