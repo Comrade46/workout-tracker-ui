@@ -10,10 +10,41 @@ Versions follow semantic versioning: `MAJOR.MINOR.PATCH`
 
 ---
 
+## 1.10.0 - Animated exercises and quick setup
+
+**Date:** 2026-09-27
+**Deployment status:** Not deployed yet
+
+### Animated exercise demos
+
+- The 6 built-in bodyweight exercises with no photo now show a simple animated
+  stick-figure demonstration instead of just a category icon: Jumping Jacks, High
+  Knees, Wall Sit, Pike Push-Ups (Shoulder Focus), Burpees, Doorframe / Towel Rows
+- Shows up everywhere exercise pictures already do: the workout player, the Exercise
+  Library, and program pages
+- Turns into a single still pose for anyone who prefers reduced motion
+
+### Quick setup for new members
+
+- Signing up now logs you straight in and asks a few quick questions - main goal,
+  level (Beginner/Intermediate/Advanced), days a week, height, current weight -
+  instead of landing on an empty Dashboard
+- Answers are saved into the same Body & goals profile, so the Continue card on
+  Home immediately suggests the right program for you
+- Skippable at any time with one tap
+- **Level** is also now a setting in Profile › Body & goals, for existing users -
+  it decides which program level (Beginner/Intermediate/Advanced) gets suggested
+
+### Server (API)
+
+- New `experienceLevel` field on Body & goals (Beginner / Intermediate / Advanced)
+
+---
+
 ## 1.9.0 - New workout player
 
 **Date:** 2026-09-26
-**Deployment status:** Not deployed yet
+**Deployment status:** Deployed 2026-09-26
 
 ### New workout player (like the Home Workout app)
 
